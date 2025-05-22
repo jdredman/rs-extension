@@ -1,15 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Hello World Sidebar</title>
+  <title>Ramsey Solutions</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="sidebar">
-    <h1>Hello World!</h1>
-    <p>This is your Chrome extension sidebar.</p>
-    <button id="changeColor">Change Color</button>
-    <p id="currentTime"></p>
+    <header class="rs-header">
+      <div class="logo">Ramsey Solutions</div>
+    </header>
+    
+    <div class="app-switcher">
+      <h2>Our Apps</h2>
+      <div class="app-grid">
+        <a href="https://www.everydollar.com/" class="app-item" target="_blank">
+          <div class="app-icon ed-icon"></div>
+          <div class="app-name">EveryDollar</div>
+        </a>
+        <a href="https://www.ramseysolutions.com/ramseyplus/financial-peace" class="app-item" target="_blank">
+          <div class="app-icon fpu-icon"></div>
+          <div class="app-name">Financial Peace University</div>
+        </a>
+        <a href="https://www.ramseysolutions.com/taxes" class="app-item" target="_blank">
+          <div class="app-icon rst-icon"></div>
+          <div class="app-name">Ramsey Smart Tax</div>
+        </a>
+      </div>
+    </div>
+    
+    <div class="input-section">
+      <label for="userInput">What's on your mind?</label>
+      <textarea id="userInput" placeholder="Share your thoughts..."></textarea>
+      <button id="submitButton">Submit</button>
+    </div>
+    
+    <footer class="rs-footer">
+      <p id="currentTime"></p>
+    </footer>
   </div>
   <script src="popup.js"></script>
 </body>

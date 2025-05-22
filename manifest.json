@@ -1,7 +1,7 @@
 {
-  "name": "Hello World Sidebar",
+  "name": "Ramsey Solutions",
   "version": "1.0",
-  "description": "Opens a sidebar with Hello World",
+  "description": "Ramsey Solutions app switcher and tools",
   "manifest_version": 3,
   "action": {
     "default_popup": "popup.html",

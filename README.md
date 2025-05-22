@@ -1,11 +1,15 @@
-# Hello World Sidebar Chrome Extension
+# Ramsey Solutions Chrome Extension
 
-A simple Chrome extension that displays a "Hello World" message in a sidebar when clicked.
+A Chrome extension for quick access to Ramsey Solutions apps and services.
 
 ## Features
 
-- Opens a sidebar popup with "Hello World" message
-- Clean, modern UI
+- App switcher for Ramsey Solutions products:
+  - EveryDollar
+  - Financial Peace University
+  - Ramsey Smart Tax
+- User input field to capture feedback
+- Styled with official Ramsey Solutions colors
 
 ## Installation
 
@@ -15,7 +19,10 @@ A simple Chrome extension that displays a "Hello World" message in a sidebar whe
 
 ## How to Use
 
-Click on the extension icon in the Chrome toolbar to open the Hello World sidebar.
+Click on the extension icon in the Chrome toolbar to open the Ramsey Solutions sidebar.
+- Click on any app icon to navigate to that Ramsey Solutions product
+- Use the input field to share feedback or ask questions
+- Submit with the button or by pressing Ctrl+Enter/Cmd+Enter
 
 ## Project Structure
 
@@ -27,11 +34,18 @@ Click on the extension icon in the Chrome toolbar to open the Hello World sideba
 
 ## Customization
 
-Feel free to modify any of the files to customize your sidebar:
-- Edit `popup.html` to change the content
-- Modify `style.css` to update the appearance
-- Extend `popup.js` to add more functionality
+You can modify this extension by:
+- Adding more Ramsey Solutions products to the app switcher
+- Changing the input field functionality
+- Updating the styling to match design changes
 
-## Note About Icons
+## Development Notes
 
-The icons in this project are SVG placeholders. For a production extension, you should replace them with proper PNG icons.
+The icons in this project are SVG placeholders. For a production extension, you should replace them with proper PNG icons with the official Ramsey Solutions logo.
+
+## Ramsey Solutions Branding
+
+This extension uses the following Ramsey Solutions brand colors:
+- Primary Blue: #0084c1
+- Green: #007935
+- Orange: #f27a00
