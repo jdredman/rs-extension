@@ -150,7 +150,7 @@ button {
     border-radius: 100%;
 
     &:hover {
-        background-color: #efefef;
+        background-color: #d8f1fc;
         border-radius: 100%;
     }
 }
