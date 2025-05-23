@@ -18,17 +18,7 @@ body {
 
 /* Header Styles */
 .rs-header {
-  background-color: #0084c1; /* Ramsey Solutions blue */
-  color: white;
   padding: 15px 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.logo {
-  font-size: 18px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 /* App Switcher Styles */
