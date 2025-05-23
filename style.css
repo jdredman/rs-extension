@@ -4,13 +4,10 @@ body {
   font-family: 'Open Sans', sans-serif;
   color: #333;
   background-color: #f5f5f5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 .sidebar {
   width: 350px;
-  height: 500px;
   background-color: #ffffff;
   box-sizing: border-box;
   display: flex;
@@ -23,29 +20,18 @@ body {
   padding: 15px 20px;
 }
 
-.logo {
-  width: 150px;
-  height: auto;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 /* App Switcher Styles */
 .app-switcher {
-  padding: 15px 20px;
-  border-bottom: 1px solid #e5e5e5;
-}
-
-.app-switcher h2 {
-  font-size: 16px;
-  color: #333;
-  margin: 0 0 15px 0;
+  padding: 16px;
+  background: #ebf4fa;
+  border-radius: 16px;
+  margin: 16px
 }
 
 .app-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .app-item {
@@ -55,12 +41,12 @@ body {
   text-decoration: none;
   color: #333;
   padding: 10px;
-  border-radius: 5px;
+  border-radius: 8px;
   transition: background-color 0.2s;
 }
 
 .app-item:hover {
-  background-color: #f5f5f5;
+  background-color: rgba(255, 255, 255, 0.4);
 }
 
 .app-icon {
@@ -72,12 +58,9 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  object-fit: contain;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  image-rendering: -webkit-optimize-contrast;
-  transform: translateZ(0);
-  backface-visibility: hidden;
+  background-size: 60%;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .ed-icon {
@@ -118,20 +101,28 @@ body {
   color: #333;
 }
 
-#userInput {
-  height: 100px;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  resize: none;
-  font-family: 'Open Sans', sans-serif;
-  margin-bottom: 15px;
+.ai-shadow {
+    position: relative;
+    display: flex;
+    padding: 3px;
+    margin: 16px;
+    border-radius: 32px;
+    background: linear-gradient(45deg, #00b2f6, #d160b7);
+    box-shadow: -5px 0 29px -8px #00b2f6, 5px 0 29px -8px #d160b7;
 }
 
-#userInput:focus {
-  outline: none;
-  border-color: #0084c1;
-  box-shadow: 0 0 5px rgba(0, 132, 193, 0.2);
+#userInput {
+    display: flex;
+    padding: 16px;
+    padding-right: 48px !important;
+    border: 0;
+    resize: none;
+    font-family: 'Open Sans', sans-serif;
+    border-radius: 30px;
+
+    &:focus {
+        outline: none;
+    }
 }
 
 button {
@@ -145,6 +136,23 @@ button {
   font-weight: 600;
   transition: background-color 0.2s;
   align-self: flex-start;
+}
+
+#submitButton{
+    position: absolute;
+    width: 39px;
+    height: 39px;
+    padding: 0;
+    right: 8px;
+    bottom: 8px;
+    background-color: transparent;
+    color: #0084c1;
+    border-radius: 100%;
+
+    &:hover {
+        background-color: #efefef;
+        border-radius: 100%;
+    }
 }
 
 button:hover {
