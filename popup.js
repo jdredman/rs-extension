@@ -18,22 +18,14 @@ document.addEventListener('DOMContentLoaded', function() {
   submitButton.addEventListener('click', function() {
     const userText = userInput.value.trim();
     if (userText) {
-      console.log('User input:', userText);
-      // In a real application, you would send this data to a server
-      
-      // Show confirmation
-      const originalButtonText = submitButton.textContent;
-      submitButton.textContent = 'Submitted!';
-      submitButton.disabled = true;
-      submitButton.style.backgroundColor = '#007935'; // Success green
-      
-      // Reset after 2 seconds
-      setTimeout(() => {
-        userInput.value = '';
-        submitButton.textContent = originalButtonText;
-        submitButton.disabled = false;
-        submitButton.style.backgroundColor = '#0084c1';
-      }, 2000);
+      // Store the input text
+      chrome.storage.local.set({ userInput: userText }, function() {
+        // After storing, navigate to the page
+        chrome.tabs.create({ url: 'https://labs.ramseysolutions.com/rp1/home' }, function(tab) {
+          // Close the popup
+          window.close();
+        });
+      });
     }
   });
   
