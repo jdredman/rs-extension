@@ -2,15 +2,6 @@
 document.addEventListener('DOMContentLoaded', function() {
   console.log('Ramsey Solutions Sidebar loaded!');
   
-  // Display current time
-  const timeElement = document.getElementById('currentTime');
-  function updateTime() {
-    const now = new Date();
-    timeElement.textContent = `Current time: ${now.toLocaleTimeString()}`;
-  }
-  updateTime();
-  setInterval(updateTime, 1000);
-  
   // Handle form submission
   const userInput = document.getElementById('userInput');
   const submitButton = document.getElementById('submitButton');
