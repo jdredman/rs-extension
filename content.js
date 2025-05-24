@@ -91,19 +91,31 @@ styleSheet.textContent = `
     }
     @keyframes rotateShadow {
         0% {
-            box-shadow: -5px 0 29px -4px rgba(0, 178, 246, 0.9), 5px 0 29px -4px rgba(209, 96, 183, 0.9);
+        box-shadow: -5px 0 29px -4px rgba(0, 178, 246, 0.95), 5px 0 10px -4px rgba(209, 96, 183, 0.95);
+        }
+        15% {
+            box-shadow: -3px 4px 15px -4px rgba(0, 178, 246, 0.95), 3px -4px 29px -4px rgba(209, 96, 183, 0.75);
         }
         25% {
-            box-shadow: 0 5px 29px -4px rgba(0, 178, 246, 0.9), 0 -5px 29px -4px rgba(209, 96, 183, 0.9);
+            box-shadow: 0 5px 29px -4px rgba(0, 178, 246, 0.99), 0 -5px 15px -4px rgba(209, 96, 183, 0.9);
+        }
+        40% {
+            box-shadow: 2px 3px 10px -4px rgba(0, 178, 246, 0.93), -2px -3px 29px -4px rgba(209, 96, 183, 0.7);
         }
         50% {
-            box-shadow: 5px 0 29px -4px rgba(0, 178, 246, 0.9), -5px 0 29px -4px rgba(209, 96, 183, 0.9);
+            box-shadow: 5px 0 29px -4px rgba(0, 178, 246, 0.85), -5px 0 10px -4px rgba(209, 96, 183, 0.85);
+        }
+        65% {
+            box-shadow: 3px -3px 15px -4px rgba(0, 178, 246, 0.95), -3px 3px 29px -4px rgba(209, 96, 183, 0.75);
         }
         75% {
-            box-shadow: 0 -5px 29px -4px rgba(0, 178, 246, 0.9), 0 5px 29px -4px rgba(209, 96, 183, 0.9);
+            box-shadow: 0 -5px 29px -4px rgba(0, 178, 246, 0.9), 0 5px 15px -4px rgba(209, 96, 183, 0.9);
+        }
+        90% {
+            box-shadow: -4px -2px 10px -4px rgba(0, 178, 246, 0.93), 4px 2px 29px -4px rgba(209, 96, 183, 0.7);
         }
         100% {
-            box-shadow: -5px 0 29px -4px rgba(0, 178, 246, 0.9), 5px 0 29px -4px rgba(209, 96, 183, 0.9);
+            box-shadow: -5px 0 29px -4px rgba(0, 178, 246, 0.95), 5px 0 10px -4px rgba(209, 96, 183, 0.95);
         }
     }
 
@@ -206,17 +218,17 @@ function addBudgetWarnings() {
             border-radius: 35px;
             background: linear-gradient(145deg, 
                 #00b2f6,
-                rgba(0, 178, 246, 0.7),
+                rgba(0, 178, 246, 1),
                 #d160b7,
-                rgba(209, 96, 183, 0.7),
+                rgba(209, 96, 183, 1),
                 #00b2f6,
-                rgba(0, 178, 246, 0.7),
+                rgba(0, 178, 246, 1),
                 #d160b7,
-                rgba(209, 96, 183, 0.7),
+                rgba(209, 96, 183, 1),
                 #00b2f6
             );
             background-size: 400% 100%;
-            animation: rotateShadow 30s ease-in-out infinite, rotateGradient 30s linear infinite;
+            animation: rotateShadow 15s ease-in-out infinite, rotateGradient 20s linear infinite;
         `;
 
         // Create inner container with background
