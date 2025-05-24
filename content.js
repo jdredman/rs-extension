@@ -38,3 +38,181 @@ chrome.storage.local.get(['userInput'], function(result) {
         }, 2000);
     }
 });
+
+// Add animation styles to the page
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+    @keyframes rotateShadow {
+        0% {
+            box-shadow: -5px 0 29px -4px rgba(0, 178, 246, 0.9), 5px 0 29px -4px rgba(209, 96, 183, 0.9);
+        }
+        25% {
+            box-shadow: 0 5px 29px -4px rgba(0, 178, 246, 0.9), 0 -5px 29px -4px rgba(209, 96, 183, 0.9);
+        }
+        50% {
+            box-shadow: 5px 0 29px -4px rgba(0, 178, 246, 0.9), -5px 0 29px -4px rgba(209, 96, 183, 0.9);
+        }
+        75% {
+            box-shadow: 0 -5px 29px -4px rgba(0, 178, 246, 0.9), 0 5px 29px -4px rgba(209, 96, 183, 0.9);
+        }
+        100% {
+            box-shadow: -5px 0 29px -4px rgba(0, 178, 246, 0.9), 5px 0 29px -4px rgba(209, 96, 183, 0.9);
+        }
+    }
+
+    @keyframes rotateGradient {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 200% 50%; }
+    }
+`;
+document.head.appendChild(styleSheet);
+
+// Price detection and budget warning functionality
+function addBudgetWarnings() {
+    // Common price selectors used by various e-commerce sites
+    const priceSelectors = [
+        '.price',
+        '[data-price]',
+        '.product-price',
+        '.regular-price',
+        'span[itemprop="price"]',
+        '.amount',
+        '.current-price',
+        '.sales-price',
+        '.product__price',
+        '.money'
+    ];
+
+    // Check if we already added the warning to this page
+    if (document.querySelector('.rs-budget-warning-container')) {
+        return;
+    }
+
+    // Find if page contains any prices
+    const priceElements = document.querySelectorAll(priceSelectors.join(','));
+    
+    if (priceElements.length > 0) {
+        // Create container for icon and warning
+        const containerEl = document.createElement('div');
+        containerEl.className = 'rs-budget-warning-container';
+        
+        // Create wrapper for animation
+        const wrapperEl = document.createElement('div');
+        wrapperEl.style.cssText = `
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999999;
+            padding: 3px;
+            border-radius: 35px;
+            background: linear-gradient(145deg, 
+                #00b2f6,
+                rgba(0, 178, 246, 0.7),
+                #d160b7,
+                rgba(209, 96, 183, 0.7),
+                #00b2f6,
+                rgba(0, 178, 246, 0.7),
+                #d160b7,
+                rgba(209, 96, 183, 0.7),
+                #00b2f6
+            );
+            background-size: 400% 100%;
+            animation: rotateShadow 30s ease-in-out infinite, rotateGradient 30s linear infinite;
+        `;
+
+        // Create inner container with background
+        containerEl.style.cssText = `
+            position: relative;
+            display: flex;
+            align-items: center;
+            background-color: #ffffff;
+            padding: 12px 48px 12px 16px;
+            border-radius: 32px;
+            gap: 12px;
+            z-index: 1;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        `;
+
+        // Create icon element
+        const iconEl = document.createElement('img');
+        iconEl.className = 'rs-budget-warning-icon';
+        iconEl.src = chrome.runtime.getURL('images/icon48.png');
+        iconEl.style.cssText = `
+            display: block;
+            width: 32px;
+            height: 32px;
+        `;
+
+        // Create warning message element
+        const warningEl = document.createElement('div');
+        warningEl.className = 'rs-budget-warning';
+        warningEl.innerHTML = 'You do not have enough left in your budget category for items on this page.<br/><a href="https://www.everydollar.com/app/budget" target="_blank">Manage in EveryDollar</a>';
+        warningEl.style.cssText = `
+            color: #333;
+            font-size: 0.9em;
+            font-weight: normal;
+            line-height: 1.4;
+        `;
+
+        // Style the link
+        const linkEl = warningEl.querySelector('a');
+        if (linkEl) {
+            linkEl.style.cssText = `
+                color: #0084c1;
+                text-decoration: none;
+                font-weight: bold;
+            `;
+        }
+
+        // Create close button
+        const closeButton = document.createElement('button');
+        closeButton.innerHTML = '×';
+        closeButton.style.cssText = `
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            &:hover {
+                background-color: #f0f0f0;
+            }
+        `;
+        closeButton.onclick = () => wrapperEl.remove();
+
+        // Add elements to container and wrapper, then insert at top of body
+        containerEl.appendChild(iconEl);
+        containerEl.appendChild(warningEl);
+        containerEl.appendChild(closeButton);
+        wrapperEl.appendChild(containerEl);
+        document.body.appendChild(wrapperEl);
+    }
+}
+
+// Run the budget check when the page loads and when content changes
+document.addEventListener('DOMContentLoaded', addBudgetWarnings);
+
+// Use a MutationObserver to detect dynamically loaded content
+const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+        if (mutation.addedNodes.length > 0) {
+            addBudgetWarnings();
+        }
+    }
+});
+
+// Start observing changes to the DOM
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
