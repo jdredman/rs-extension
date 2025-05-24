@@ -39,9 +39,24 @@ chrome.storage.local.get(['userInput'], function(result) {
     }
 });
 
-// Add animation styles to the page
+// Add font face and animation styles to the page
 const styleSheet = document.createElement('style');
 styleSheet.textContent = `
+    @font-face {
+        font-family: 'Gibson';
+        src: url('https://www.ramseysolutions.com/fonts/canada-type-gibson-regular.woff2') format('woff2');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+    }
+
+    @font-face {
+        font-family: 'Gibson';
+        src: url('https://www.ramseysolutions.com/fonts/canada-type-gibson-semibold.woff2') format('woff2');
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+    }
     @keyframes rotateShadow {
         0% {
             box-shadow: -5px 0 29px -4px rgba(0, 178, 246, 0.9), 5px 0 29px -4px rgba(209, 96, 183, 0.9);
@@ -198,22 +213,21 @@ function addBudgetWarnings() {
         // Create warning message element
         const warningEl = document.createElement('div');
         warningEl.className = 'rs-budget-warning';
-        warningEl.innerHTML = 'You do not have enough left in your budget category for items on this page.<br/><a href="https://www.everydollar.com/app/budget" target="_blank">Manage in EveryDollar</a>';
+        warningEl.innerHTML = '<span style="font-family: Gibson, sans-serif; font-weight: 600;">Budget Alert:</span> You do not have enough left in your budget category for items on this page. <a href="https://www.everydollar.com/app/budget" target="_blank">Manage in EveryDollar</a>';
         warningEl.style.cssText = `
             color: #333;
             font-size: 0.9em;
             font-weight: normal;
             line-height: 1.4;
-        `;
-
-        // Style the link
-        const linkEl = warningEl.querySelector('a');
-        if (linkEl) {
-            linkEl.style.cssText = `
-                color: #0084c1;
-                text-decoration: none;
-                font-weight: bold;
-            `;
+            font-family: 'Gibson', sans-serif;
+        `;            // Style the link
+            const linkEl = warningEl.querySelector('a');
+            if (linkEl) {
+                linkEl.style.cssText = `
+                    color: #0084c1;
+                    text-decoration: underline;
+                    font-weight: normal;
+                `;
         }
 
         // Create close button
