@@ -101,17 +101,62 @@ body {
   color: #333;
 }
 
+@keyframes rotateShadow {
+    0% {
+        box-shadow: -5px 0 29px -4px rgba(0, 178, 246, 0.9), 5px 0 29px -4px rgba(209, 96, 183, 0.9);
+    }
+    25% {
+        box-shadow: 0 5px 29px -4px rgba(0, 178, 246, 0.9), 0 -5px 29px -4px rgba(209, 96, 183, 0.9);
+    }
+    50% {
+        box-shadow: 5px 0 29px -4px rgba(0, 178, 246, 0.9), -5px 0 29px -4px rgba(209, 96, 183, 0.9);
+    }
+    75% {
+        box-shadow: 0 -5px 29px -4px rgba(0, 178, 246, 0.9), 0 5px 29px -4px rgba(209, 96, 183, 0.9);
+    }
+    100% {
+        box-shadow: -5px 0 29px -4px rgba(0, 178, 246, 0.9), 5px 0 29px -4px rgba(209, 96, 183, 0.9);
+    }
+}
+
+@keyframes rotateGradient {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
 .ai-shadow {
     position: relative;
     display: flex;
     padding: 3px;
     margin: 16px;
     border-radius: 32px;
-    background: linear-gradient(45deg, #00b2f6, #d160b7);
-    box-shadow: -5px 0 29px -8px #00b2f6, 5px 0 29px -8px #d160b7;
+    background: linear-gradient(90deg, 
+        #00b2f6,
+        rgba(0, 178, 246, 0.7),
+        #d160b7,
+        rgba(209, 96, 183, 0.7),
+        #00b2f6,
+        rgba(0, 178, 246, 0.7),
+        #d160b7,
+        rgba(209, 96, 183, 0.7),
+        #00b2f6
+    );
+    background-size: 400% 100%;
+    animation: rotateShadow 30s ease-in-out infinite, rotateGradient 30s linear infinite;
+}
+
+.ai-shadow::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    background: white;
+    border-radius: 29px;
+    z-index: 0;
 }
 
 #userInput {
+    position: relative;
+    width: 100%;
     display: flex;
     padding: 16px;
     padding-right: 48px !important;
@@ -119,6 +164,8 @@ body {
     resize: none;
     font-family: 'Open Sans', sans-serif;
     border-radius: 30px;
+    background: transparent;
+    z-index: 1;
 
     &:focus {
         outline: none;
