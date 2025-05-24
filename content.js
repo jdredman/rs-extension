@@ -71,6 +71,7 @@ document.head.appendChild(styleSheet);
 function addBudgetWarnings() {
     // Common price selectors used by various e-commerce sites
     const priceSelectors = [
+        // Standard price classes
         '.price',
         '[data-price]',
         '.product-price',
@@ -80,7 +81,34 @@ function addBudgetWarnings() {
         '.current-price',
         '.sales-price',
         '.product__price',
-        '.money'
+        '.money',
+        
+        // E-commerce platform specific
+        // Shopify
+        '.price__regular',
+        '.price__sale',
+        '.price-item',
+        // WooCommerce
+        '.woocommerce-Price-amount',
+        // Common retail sites
+        '[data-automation-id="product-price"]',
+        '[data-test-id*="price"]',
+        '[data-testid*="price"]',
+        '.pd-price',
+        '.product-price-amount',
+        '.product-price-value',
+        '.product-price__retail',
+        '.product-price__sale',
+        '.product-price--pdp',
+        '.product-price--list',
+        '.product-price--sale',
+        // Generic attributes
+        '[class*="price"]',
+        '[id*="price"]',
+        '[data-component*="price"]',
+        '[data-name*="price"]',
+        '[aria-label*="price"]',
+        '[data-analytics-value]'
     ];
 
     // Check if we already added the warning to this page
@@ -88,8 +116,31 @@ function addBudgetWarnings() {
         return;
     }
 
-    // Find if page contains any prices
-    const priceElements = document.querySelectorAll(priceSelectors.join(','));
+    // First try direct price selectors
+    let priceElements = document.querySelectorAll(priceSelectors.join(','));
+    
+    // If no prices found, try finding currency symbols
+    if (priceElements.length === 0) {
+        const currencyRegex = /(?:USD|US|\$|£|€)\s*\d+(?:[.,]\d{2})?|\d+(?:[.,]\d{2})?\s*(?:USD|US|\$|£|€)/i;
+        const textNodes = [];
+        const walk = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: function(node) {
+                    return currencyRegex.test(node.nodeValue)
+                        ? NodeFilter.FILTER_ACCEPT
+                        : NodeFilter.FILTER_REJECT;
+                }
+            }
+        );
+
+        while (walk.nextNode()) {
+            textNodes.push(walk.currentNode.parentElement);
+        }
+        
+        priceElements = new Set(textNodes);
+    }
     
     if (priceElements.length > 0) {
         // Create container for icon and warning
