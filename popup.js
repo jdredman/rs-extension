@@ -1,39 +1,74 @@
-// This script runs when the popup is opened
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('Ramsey Solutions Sidebar loaded!');
-  
-  // Handle form submission
-  const userInput = document.getElementById('userInput');
-  const submitButton = document.getElementById('submitButton');
-  
-  submitButton.addEventListener('click', function() {
-    const userText = userInput.value.trim();
-    if (userText) {
-      // Store the input text
-      chrome.storage.local.set({ userInput: userText }, function() {
-        // After storing, navigate to the page
-        chrome.tabs.create({ url: 'https://labs.ramseysolutions.com/rp1/home' }, function(tab) {
-          // Close the popup
-          window.close();
+/**
+ * Ramsey Solutions Chrome Extension Popup Script
+ * Handles user interactions in the extension popup
+ */
+
+// Configuration
+const CONFIG = {
+    LABS_URL: 'https://labs.ramseysolutions.com/rp1/home',
+    STORAGE_KEY: 'userInput'
+};
+
+// DOM Elements
+let elements = {
+    userInput: null,
+    submitButton: null,
+    appLinks: null
+};
+
+/**
+ * Handles form submission
+ * @param {string} userText - The text input by the user
+ */
+function handleSubmission(userText) {
+    if (!userText) return;
+    
+    chrome.storage.local.set({ [CONFIG.STORAGE_KEY]: userText }, () => {
+        chrome.tabs.create({ url: CONFIG.LABS_URL }, () => {
+            window.close();
         });
-      });
-    }
-  });
-  
-  // Add keyboard shortcut for submission (Ctrl+Enter or Cmd+Enter)
-  userInput.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      submitButton.click();
-    }
-  });
-  
-  // Track app switcher clicks (for analytics in a real extension)
-  const appLinks = document.querySelectorAll('.app-item');
-  appLinks.forEach(link => {
-    link.addEventListener('click', function(e) {
-      const appName = this.querySelector('.app-name').textContent;
-      console.log(`App clicked: ${appName}`);
-      // In a real application, you might report this to an analytics service
     });
-  });
-});
+}
+
+/**
+ * Initializes event listeners for the popup
+ */
+function initializeEventListeners() {
+    // Submit button click handler
+    elements.submitButton.addEventListener('click', () => {
+        handleSubmission(elements.userInput.value.trim());
+    });
+
+    // Keyboard shortcut handler (Ctrl/Cmd + Enter)
+    elements.userInput.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            elements.submitButton.click();
+        }
+    });
+
+    // App switcher analytics
+    elements.appLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            const appName = link.querySelector('.app-name').textContent;
+            console.log(`App clicked: ${appName}`);
+            // Add analytics here if needed
+        });
+    });
+}
+
+/**
+ * Initializes the popup
+ */
+function initializePopup() {
+    // Cache DOM elements
+    elements = {
+        userInput: document.getElementById('userInput'),
+        submitButton: document.getElementById('submitButton'),
+        appLinks: document.querySelectorAll('.app-item')
+    };
+
+    initializeEventListeners();
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', initializePopup);

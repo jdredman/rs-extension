@@ -1,41 +1,73 @@
-// This script runs on the labs.ramseysolutions.com page
-chrome.storage.local.get(['userInput'], function(result) {
-    if (result.userInput) {
-        // Function to find and fill the input field
-        function fillInputAndSubmit() {
-            const input = document.querySelector('.v-field__input');
-            const submitButton = document.querySelector('button[type="submit"].v-btn--icon');
-            
-            if (input && submitButton) {
-                // Fill the input and trigger necessary events
-                input.value = result.userInput;
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-                
-                // Wait a brief moment for Vue to process the input
-                setTimeout(() => {
-                    // Trigger click events on the submit button
-                    submitButton.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                    submitButton.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-                    submitButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-                    
-                    // Clear the stored input after submission
-                    chrome.storage.local.remove('userInput');
-                }, 500);
-            } else {
-                // If elements aren't found yet, try again
-                setTimeout(fillInputAndSubmit, 1000);
-            }
-        }
+/**
+ * Content script for Ramsey Solutions Chrome Extension
+ * Handles interaction with the labs.ramseysolutions.com page
+ */
 
-        // Start the process with a delay to ensure Vue is fully initialized
+// Configuration
+const CONFIG = {
+    STORAGE_KEY: 'userInput',
+    SELECTORS: {
+        input: '.v-field__input',
+        submitButton: 'button[type="submit"].v-btn--icon'
+    },
+    DELAYS: {
+        vueInit: 2000,
+        retryInterval: 1000,
+        eventDelay: 500
+    }
+};
+
+/**
+ * Simulates user interaction with form elements
+ * @param {HTMLElement} input - The input field element
+ * @param {HTMLElement} submitButton - The submit button element
+ * @param {string} inputValue - The value to input
+ */
+function simulateUserInteraction(input, submitButton, inputValue) {
+    // Fill input and trigger events
+    input.value = inputValue;
+    ['input', 'change'].forEach(eventType => {
+        input.dispatchEvent(new Event(eventType, { bubbles: true }));
+    });
+    
+    // Simulate button click with slight delay for Vue
+    setTimeout(() => {
+        ['mousedown', 'mouseup', 'click'].forEach(eventType => {
+            submitButton.dispatchEvent(new MouseEvent(eventType, { bubbles: true }));
+        });
+        
+        // Clear stored input
+        chrome.storage.local.remove(CONFIG.STORAGE_KEY);
+    }, CONFIG.DELAYS.eventDelay);
+}
+
+/**
+ * Attempts to find and fill the input field
+ * @param {string} userInput - The text to input
+ */
+function fillInputAndSubmit(userInput) {
+    const input = document.querySelector(CONFIG.SELECTORS.input);
+    const submitButton = document.querySelector(CONFIG.SELECTORS.submitButton);
+    
+    if (input && submitButton) {
+        simulateUserInteraction(input, submitButton, userInput);
+    } else {
+        // Retry if elements aren't found
+        setTimeout(() => fillInputAndSubmit(userInput), CONFIG.DELAYS.retryInterval);
+    }
+}
+
+// Initialize content script
+chrome.storage.local.get([CONFIG.STORAGE_KEY], function(result) {
+    if (result[CONFIG.STORAGE_KEY]) {
+        // Wait for Vue to initialize
         setTimeout(() => {
             if (document.readyState === 'complete') {
-                fillInputAndSubmit();
+                fillInputAndSubmit(result[CONFIG.STORAGE_KEY]);
             } else {
-                window.addEventListener('load', fillInputAndSubmit);
+                window.addEventListener('load', () => fillInputAndSubmit(result[CONFIG.STORAGE_KEY]));
             }
-        }, 2000);
+        }, CONFIG.DELAYS.vueInit);
     }
 });
 
