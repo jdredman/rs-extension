@@ -1,3 +1,52 @@
+/* Font faces */
+@font-face {
+    font-family: 'Gibson';
+    src: url('https://www.ramseysolutions.com/fonts/canada-type-gibson-regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Gibson';
+    src: url('https://www.ramseysolutions.com/fonts/canada-type-gibson-semibold.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* CSS Variables */
+:root {
+    /* Colors */
+    --primary-blue: #0084c1;
+    --primary-blue-hover: #006ea0;
+    --primary-blue-light: #d8f1fc;
+    --background-white: #ffffff;
+    --background-light-blue: #ebf4fa;
+    --text-dark: #333333;
+    --text-grey: #666666;
+    
+    /* Shadows */
+    --shadow-blue: rgba(0, 178, 246, 0.95);
+    --shadow-purple: rgba(209, 96, 183, 0.95);
+    
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 16px;
+    --radius-full: 50%;
+    
+    /* Transitions */
+    --transition-fast: 0.2s ease;
+}
+
 /* Base styles */
 * { 
     box-sizing: border-box;
@@ -11,12 +60,14 @@ body {
     padding: 0;
     font-family: 'Gibson', sans-serif;
     min-width: 320px;
-    background-color: #ffffff;
+    background-color: var(--background-white);
 }
 
 .sidebar { 
-    background-color: #ffffff;
+    background-color: var(--background-white);
     width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
 }
 
 /* Header Styles */
@@ -62,18 +113,18 @@ body {
 }
 
 .app-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  margin-bottom: 8px;
-  background-color: #f0f0f0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-size: 60%;
-  background-position: center;
-  background-repeat: no-repeat;
-  
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    margin-bottom: 8px;
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-size: 60%;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: transform 0.2s ease;
 }
 
 .ed-icon {
@@ -142,18 +193,18 @@ body {
 .ai-shadow {
     position: relative;
     padding: 3px;
-    margin: 24px;
+    margin: var(--spacing-lg);
     border-radius: 32px;
     background: linear-gradient(145deg, 
-        #00b2f6,
+        var(--primary-blue),
         rgba(0, 178, 246, 1),
         #d160b7,
         rgba(209, 96, 183, 1),
-        #00b2f6,
+        var(--primary-blue),
         rgba(0, 178, 246, 1),
         #d160b7,
         rgba(209, 96, 183, 1),
-        #00b2f6
+        var(--primary-blue)
     );
     background-size: 400% 100%;
     animation: rotateShadow 15s ease-in-out infinite, rotateGradient 20s linear infinite;
@@ -187,42 +238,43 @@ body {
     }
 }
 
+/* Button styles */
 button {
-  background-color: #0084c1; /* Ramsey Solutions blue */
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  font-family: 'Gibson', sans-serif;
-  font-weight: 600;
-  transition: background-color 0.2s;
-  align-self: flex-start;
+    background-color: var(--primary-blue);
+    color: var(--background-white);
+    border: none;
+    padding: 10px 15px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+    font-family: 'Gibson', sans-serif;
+    font-weight: 600;
+    transition: background-color var(--transition-fast);
+    align-self: flex-start;
 }
 
-#submitButton{
+#submitButton {
     position: absolute;
     width: 39px;
     height: 39px;
     padding: 0;
-    right: 8px;
-    bottom: 8px;
+    right: var(--spacing-sm);
+    bottom: var(--spacing-sm);
     background-color: transparent;
-    color: #0084c1;
-    border-radius: 100%;
+    color: var(--primary-blue);
+    border-radius: var(--radius-full);
     z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s ease;
+    transition: background-color var(--transition-fast);
 
     &:hover {
-        background-color: #d8f1fc;
-        border-radius: 100%;
+        background-color: var(--primary-blue-light);
+        border-radius: var(--radius-full);
     }
 }
 
 button:hover {
-  background-color: #006ea0;
+    background-color: var(--primary-blue-hover);
 }
