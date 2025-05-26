@@ -232,9 +232,32 @@ body {
     border-radius: 30px;
     background: transparent;
     z-index: 1;
+    min-height: 52px;  /* Single line height */
+    max-height: 160px; /* Approximately 5 lines */
+    overflow-y: auto;
+    line-height: 20px;
+    transition: height var(--transition-fast);
 
     &:focus {
         outline: none;
+    }
+
+    /* Customizing scrollbar */
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--primary-blue-light);
+        border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-blue-hover);
     }
 }
 

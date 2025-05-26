@@ -31,6 +31,20 @@ function handleSubmission(userText) {
 }
 
 /**
+ * Automatically adjusts textarea height based on content
+ * @param {HTMLTextAreaElement} textarea - The textarea element to adjust
+ */
+function adjustTextareaHeight(textarea) {
+    // Reset height to default to measure scroll height accurately
+    textarea.style.height = 'auto';
+    
+    // Set the height to either scrollHeight or max-height
+    const maxHeight = 160; // Match CSS max-height
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${newHeight}px`;
+}
+
+/**
  * Initializes event listeners for the popup
  */
 function initializeEventListeners() {
@@ -44,6 +58,15 @@ function initializeEventListeners() {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             elements.submitButton.click();
         }
+        // Allow Enter for newlines
+        if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+            e.stopPropagation(); // Prevent form submission
+        }
+    });
+
+    // Auto-expand textarea handler
+    elements.userInput.addEventListener('input', () => {
+        adjustTextareaHeight(elements.userInput);
     });
 
     // App switcher analytics
@@ -68,6 +91,9 @@ function initializePopup() {
     };
 
     initializeEventListeners();
+
+    // Set initial textarea height
+    adjustTextareaHeight(elements.userInput);
 }
 
 // Initialize when DOM is ready
