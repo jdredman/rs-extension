@@ -164,7 +164,7 @@ function addBudgetWarnings() {
         // Create icon element
         const iconEl = document.createElement('img');
         iconEl.className = 'rs-budget-warning-icon';
-        iconEl.src = chrome.runtime.getURL('images/icon48.png');
+        iconEl.src = chrome.runtime.getURL('images/icon128.png');
 
         // Create warning message element
         const warningEl = document.createElement('div');

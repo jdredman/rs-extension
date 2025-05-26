@@ -56,12 +56,9 @@
     position: relative;
     display: flex;
     align-items: center;
-    background-color: #ffffff;
     padding: 12px 48px 12px 16px;
-    border-radius: 32px;
-    gap: 12px;
+    gap: 8px;
     z-index: 1;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .rs-budget-warning-wrapper {
@@ -70,41 +67,33 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 999999;
-    padding: 3px;
-    border-radius: 35px;
-    background: linear-gradient(145deg, 
-        #00b2f6,
-        rgba(0, 178, 246, 1),
-        #d160b7,
-        rgba(209, 96, 183, 1),
-        #00b2f6,
-        rgba(0, 178, 246, 1),
-        #d160b7,
-        rgba(209, 96, 183, 1),
-        #00b2f6
-    );
-    background-size: 400% 100%;
+    border-radius: 16px;
+    background-color: #ffffff;
     animation: rotateShadow 15s ease-in-out infinite, rotateGradient 20s linear infinite;
 }
 
 .rs-budget-warning-icon {
     display: block;
-    width: 32px;
-    height: 32px;
+    width: 48px;
+    height: 48px;
 }
 
 .rs-budget-warning {
     color: #333;
-    font-size: 0.9em;
+    font-size: 14px;
     font-weight: normal;
     line-height: 1.4;
     font-family: 'Gibson', sans-serif;
 }
 
+.rs-budget-warning-title {
+    font-weight: 600;
+}
+
 .rs-budget-warning a {
     color: #0084c1;
     text-decoration: underline;
-    font-weight: normal;
+    font-weight: 600;
 }
 
 .rs-budget-warning-close {
@@ -114,7 +103,7 @@
     background: none;
     border: none;
     color: #666;
-    font-size: 20px;
+    font-size: 24px;
     cursor: pointer;
     padding: 0;
     width: 24px;
@@ -122,7 +111,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
+    border-radius: 4px;
 }
 
 .rs-budget-warning-close:hover {
