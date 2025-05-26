@@ -169,7 +169,7 @@ function addBudgetWarnings() {
         // Create warning message element
         const warningEl = document.createElement('div');
         warningEl.className = 'rs-budget-warning';
-        warningEl.innerHTML = '<span class="rs-budget-warning-title">Budget Alert:</span> You do not have enough left in your budget category for items on this page. <a href="https://www.everydollar.com/app/budget" target="_blank">Manage in EveryDollar</a>';
+        warningEl.innerHTML = '<span class="rs-budget-warning-title">Budget Alert:</span> You do not have enough left in your budget category for items on this page. <br/><a href="https://www.everydollar.com/app/budget" target="_blank">Manage in EveryDollar</a>';
 
         // Create close button
         const closeButton = document.createElement('button');
