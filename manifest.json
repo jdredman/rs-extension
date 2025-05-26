@@ -28,7 +28,7 @@
     "<all_urls>"
   ],
   "web_accessible_resources": [{
-    "resources": ["images/*"],
+    "resources": ["images/*", "content-styles.css"],
     "matches": ["<all_urls>"]
   }],
   "content_scripts": [
