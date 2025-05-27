@@ -15,29 +15,42 @@
            class="logo">
     </header>
     
-    <div class="ai-shadow">
-        <textarea id="userInput" class="input-section" rows="1" placeholder="Ask a Question"></textarea>
-        <button id="submitButton">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="v-icon notranslate v-theme--RamseyTheme v-icon--size-default">
-                <path fill-rule="evenodd" d="M14.3 4.3a1 1 0 0 1 1.4 0l7 7a1 1 0 0 1 .3.7v-.09a1 1 0 0 1 0 .06V12a1.02 1.02 0 0 1-.2.6 1 1 0 0 1-.1.1l.09-.08h-.01l-.07.09-7 7a1 1 0 0 1-1.42-1.42L19.6 13H2a1 1 0 0 1-1-.88V12a1 1 0 0 1 1-1h17.59l-5.3-5.3a1 1 0 0 1-.08-1.31z"></path>
-            </svg>
-        </button>
+    <!-- Main content area -->
+    <div class="content-area">
+      <!-- App switcher view -->
+      <div id="appSwitcherView" class="app-switcher">
+        <div class="app-grid">
+          <a href="https://www.everydollar.com/app/budget" class="app-item" target="_blank">
+            <img src="images/app-switcher/everydollar.png" alt="EveryDollar Logo" class="app-icon">
+            <div class="app-name">EveryDollar</div>
+          </a>
+          <a href="https://www.financialpeace.com/app/member" class="app-item" target="_blank">
+            <img src="images/app-switcher/financial-peace.png" alt="Financial Peace Logo" class="app-icon">
+            <div class="app-name">Financial Peace</div>
+          </a>
+          <a href="https://ramseysmarttax.taxslayer.com" class="app-item" target="_blank">
+            <img src="images/app-switcher/smart-tax.png" alt="Smart Tax Logo" class="app-icon">
+            <div class="app-name">Smart Tax</div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Chat view (initially hidden) -->
+      <div id="chatView" class="chat-view hidden">
+        <button id="closeChatButton" class="close-button">×</button>
+        <div id="chatMessages" class="chat-messages"></div>
+      </div>
     </div>
     
-    <div class="app-switcher">
-      <div class="app-grid">
-        <a href="https://www.everydollar.com/app/budget" class="app-item" target="_blank">
-          <img src="images/app-switcher/everydollar.png" alt="EveryDollar Logo" class="app-icon">
-          <div class="app-name">EveryDollar</div>
-        </a>
-        <a href="https://www.financialpeace.com/app/member" class="app-item" target="_blank">
-          <img src="images/app-switcher/financial-peace.png" alt="Financial Peace Logo" class="app-icon">
-          <div class="app-name">Financial Peace</div>
-        </a>
-        <a href="https://ramseysmarttax.taxslayer.com" class="app-item" target="_blank">
-          <img src="images/app-switcher/smart-tax.png" alt="EveryDollar Logo" class="app-icon">
-          <div class="app-name">Smart Tax</div>
-        </a>
+    <!-- Input container (always at bottom) -->
+    <div class="input-container">
+      <div class="ai-shadow">
+        <textarea id="userInput" class="chat-input" rows="1" placeholder="Ask a Question"></textarea>
+        <button id="submitButton">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path fill-rule="evenodd" d="M14.3 4.3a1 1 0 0 1 1.4 0l7 7a1 1 0 0 1 .3.7v-.09a1 1 0 0 1 0 .06V12a1.02 1.02 0 0 1-.2.6 1 1 0 0 1-.1.1l.09-.08h-.01l-.07.09-7 7a1 1 0 0 1-1.42-1.42L19.6 13H2a1 1 0 0 1-1-.88V12a1 1 0 0 1 1-1h17.59l-5.3-5.3a1 1 0 0 1-.08-1.31z"></path>
+          </svg>
+        </button>
       </div>
     </div>
   </div>

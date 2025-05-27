@@ -7,6 +7,9 @@
 ehthumbs.db
 Thumbs.db
 
+# Environment files
+.env
+
 # Editor directories and files
 .idea/
 .vscode/
