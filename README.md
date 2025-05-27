@@ -1,21 +1,26 @@
-# Ramsey Solutions Chrome Extension
+# Ramsey Solutions Chrome Extension Prototype
 
 A Chrome extension for quick access to Ramsey Solutions apps and services.
-
-## Features
-
-- App switcher for Ramsey Solutions products:
-  - EveryDollar
-  - Financial Peace University
-  - Ramsey Smart Tax
-- User input field to capture feedback
-- Styled with official Ramsey Solutions colors
 
 ## Installation
 
 1. Open Chrome and navigate to `chrome://extensions/`
 2. Enable "Developer mode" by toggling the switch in the top right corner
 3. Click "Load unpacked" and select this folder
+
+## Development Setup
+
+1. Clone this repository
+2. Create a `.env` file in the root directory:
+   ```
+   OPENAI_API_KEY=your_api_key_here
+   ```
+3. Replace `your_api_key_here` with your OpenAI API key
+   - You can get an API key from [OpenAI's platform](https://platform.openai.com/api-keys)
+   - Keep this key secure and never commit it to the repository
+4. The extension will automatically load the API key from the .env file
+
+Note: The `.env` file is gitignored to keep the API key secure.
 
 ## How to Use
 
@@ -31,21 +36,3 @@ Click on the extension icon in the Chrome toolbar to open the Ramsey Solutions s
 - `popup.js`: JavaScript for the sidebar functionality
 - `style.css`: Styling for the sidebar
 - `images/`: Contains icons for the extension
-
-## Customization
-
-You can modify this extension by:
-- Adding more Ramsey Solutions products to the app switcher
-- Changing the input field functionality
-- Updating the styling to match design changes
-
-## Development Notes
-
-The icons in this project are SVG placeholders. For a production extension, you should replace them with proper PNG icons with the official Ramsey Solutions logo.
-
-## Ramsey Solutions Branding
-
-This extension uses the following Ramsey Solutions brand colors:
-- Primary Blue: #0084c1
-- Green: #007935
-- Orange: #f27a00
