@@ -22,6 +22,37 @@ let elements = {
 };
 
 /**
+ * Gets the current tab's context
+ */
+async function getCurrentTabContext() {
+    try {
+        const [tab] = await chrome.tabs.query({ 
+            active: true, 
+            currentWindow: true,
+            status: 'complete'
+        });
+
+        if (!tab) return null;
+
+        // Request fresh context from content script
+        const context = await new Promise((resolve) => {
+            chrome.tabs.sendMessage(tab.id, { action: 'getPageContext' }, (response) => {
+                resolve(response);
+            });
+        });
+        
+        if (!context) {
+            throw new Error('No context received from content script');
+        }
+
+        return context;
+    } catch (error) {
+        console.error('Error getting page context:', error);
+        return null;
+    }
+}
+
+/**
  * Switches between app switcher and chat views
  * @param {boolean} showChat - Whether to show chat view
  */
@@ -55,43 +86,34 @@ function addMessage(text, type) {
 
 /**
  * Handles the chat with OpenAI
- * @param {string} userInput - The user's message
  */
 async function handleChat(userInput) {
     try {
-        // Get API key from storage
-        const { OPENAI_API_KEY } = await chrome.storage.local.get(['OPENAI_API_KEY']);
-        if (!OPENAI_API_KEY) {
-            addMessage('Error: OpenAI API key not found. Make sure .env file is present.', 'assistant');
+        // Get fresh context
+        const context = await getCurrentTabContext();
+        
+        if (!context) {
+            addMessage("I'm having trouble accessing the page content. Please refresh the page and try again.", 'assistant');
             return;
         }
 
         // Add user message to chat
         addMessage(userInput, 'user');
         
-        // Make API request to OpenAI
-        // Get page context
-        const { pageContext } = await chrome.storage.local.get(['pageContext']);
-        
-        // Format page context for the AI
-        let contextDescription = '';
-        if (pageContext) {
-            contextDescription = `
-Current page: ${pageContext.url}
-Title: ${pageContext.title}
+        // Format context for OpenAI
+        let contextDescription = `
+Current page: ${context.url}
+Title: ${context.title}
 
-${pageContext.content.mainHeading ? `Main Topic: ${pageContext.content.mainHeading}` : ''}
-${pageContext.content.subHeadings ? `Key Points:\n${pageContext.content.subHeadings.map(h => `- ${h}`).join('\n')}` : ''}
+${context.content.mainHeading ? `Main Topic: ${context.content.mainHeading}` : ''}
+${context.content.subHeadings ? `Key Points:\n${context.content.subHeadings.map(h => `- ${h}`).join('\n')}` : ''}
 
 Article Content:
-${pageContext.content.summary || ''}
+${context.content.summary || ''}
 
-${pageContext.metadata.keywords ? `Keywords: ${pageContext.metadata.keywords}` : ''}
-${pageContext.metadata.author ? `Author: ${pageContext.metadata.author}` : ''}
-${pageContext.metadata.description ? `Description: ${pageContext.metadata.description}` : ''}
+${context.metadata.keywords ? `Keywords: ${context.metadata.keywords}` : ''}
+${context.metadata.author ? `Author: ${context.metadata.author}` : ''}
 `;
-        }
-        
         // Construct system message with Ramsey-specific instructions
         const systemMessage = `You are a Ramsey Solutions expert assistant. You have access to the current webpage content and should reference it in your responses when relevant. Always respond in alignment with Dave Ramsey's principles and teachings:
 - Avoid debt at all costs - debt is not a tool
@@ -103,11 +125,18 @@ ${pageContext.metadata.description ? `Description: ${pageContext.metadata.descri
 - Live below your means and avoid consumer culture
 
 Current page context:
-${pageContext ? `URL: ${pageContext.url}
-Title: ${pageContext.title}
-Content: ${pageContext.content}` : 'No page context available'}
+${context ? `URL: ${context.url}
+Title: ${context.title}
+Content: ${context.content}` : 'No page context available'}
 
 Remember to always provide advice that aligns with Ramsey Solutions' values and teachings.`;
+
+        // Get API key from storage
+        const { OPENAI_API_KEY } = await chrome.storage.local.get(['OPENAI_API_KEY']);
+        if (!OPENAI_API_KEY) {
+            addMessage('Error: OpenAI API key not found.', 'assistant');
+            return;
+        }
 
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -146,7 +175,7 @@ Remember to always provide advice that aligns with Ramsey Solutions' values and 
             addMessage(assistantResponse, 'assistant');
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Chat error:', error);
         addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
     }
 }

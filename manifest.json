@@ -22,7 +22,8 @@
     "storage",
     "scripting",
     "tabs",
-    "sidePanel"
+    "sidePanel",
+    "activeTab"
   ],
   "host_permissions": [
     "<all_urls>"
