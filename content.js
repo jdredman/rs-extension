@@ -1,81 +1,94 @@
 /**
  * Content script for Ramsey Solutions Chrome Extension
- * Handles interaction with the labs.ramseysolutions.com page
+ * Handles interaction with web pages and context collection
  */
 
-// Configuration
 const CONFIG = {
-    STORAGE_KEY: 'userInput',
+    PAGE_CONTEXT_KEY: 'pageContext',
+    BUDGET_WARNING_KEY: 'budgetWarning',
     SELECTORS: {
-        input: '.v-field__input',
-        submitButton: 'button[type="submit"].v-btn--icon'
-    },
-    DELAYS: {
-        vueInit: 2000,
-        retryInterval: 1000,
-        eventDelay: 500
+        content: [
+            'h1',
+            'h2',
+            'h3',
+            'article',
+            'main',
+            '[role="main"]',
+            '.main-content',
+            '.article-content',
+            'meta[name="description"]'
+        ]
     }
 };
 
 /**
- * Simulates user interaction with form elements
- * @param {HTMLElement} input - The input field element
- * @param {HTMLElement} submitButton - The submit button element
- * @param {string} inputValue - The value to input
+ * Extracts relevant content from the page
+ * @returns {Object} Page context information
  */
-function simulateUserInteraction(input, submitButton, inputValue) {
-    // Fill input and trigger events
-    input.value = inputValue;
-    ['input', 'change'].forEach(eventType => {
-        input.dispatchEvent(new Event(eventType, { bubbles: true }));
-    });
-    
-    // Simulate button click with slight delay for Vue
-    setTimeout(() => {
-        ['mousedown', 'mouseup', 'click'].forEach(eventType => {
-            submitButton.dispatchEvent(new MouseEvent(eventType, { bubbles: true }));
+function extractPageContext() {
+    const context = {
+        url: window.location.href,
+        title: document.title,
+        content: '',
+        metadata: {}
+    };
+
+    // Get meta description
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+        context.metadata.description = metaDesc.getAttribute('content');
+    }
+
+    // Get main content with structure
+    let contentSections = {};
+    CONFIG.SELECTORS.content.forEach(selector => {
+        const elements = Array.from(document.querySelectorAll(selector));
+        elements.forEach(el => {
+            const text = el.textContent.trim();
+            if (text) {
+                // Categorize content by type
+                if (el.tagName === 'H1') contentSections.mainHeading = text;
+                else if (el.tagName === 'H2' || el.tagName === 'H3') {
+                    if (!contentSections.subHeadings) contentSections.subHeadings = [];
+                    contentSections.subHeadings.push(text);
+                }
+                else if (el.tagName === 'ARTICLE' || el.tagName === 'MAIN') {
+                    if (!contentSections.mainContent) contentSections.mainContent = [];
+                    contentSections.mainContent.push(text);
+                }
+            }
         });
-        
-        // Clear stored input
-        chrome.storage.local.remove(CONFIG.STORAGE_KEY);
-    }, CONFIG.DELAYS.eventDelay);
+    });
+
+    // Get additional context
+    const links = Array.from(document.querySelectorAll('a'))
+        .map(a => ({ text: a.textContent.trim(), href: a.href }))
+        .filter(link => link.text && !link.text.includes('http'));
+
+    // Combine metadata
+    context.metadata = {
+        ...context.metadata,
+        keywords: document.querySelector('meta[name="keywords"]')?.content,
+        author: document.querySelector('meta[name="author"]')?.content,
+        links: links.slice(0, 5) // Include first 5 relevant links
+    };
+
+    // Create structured content
+    context.content = {
+        ...contentSections,
+        summary: contentSections.mainContent?.join(' ').slice(0, 2000) // First 2000 chars of main content
+    };
+
+    return context;
 }
 
 /**
- * Attempts to find and fill the input field
- * @param {string} userInput - The text to input
+ * Stores the current page context
  */
-function fillInputAndSubmit(userInput) {
-    const input = document.querySelector(CONFIG.SELECTORS.input);
-    const submitButton = document.querySelector(CONFIG.SELECTORS.submitButton);
-    
-    if (input && submitButton) {
-        simulateUserInteraction(input, submitButton, userInput);
-    } else {
-        // Retry if elements aren't found
-        setTimeout(() => fillInputAndSubmit(userInput), CONFIG.DELAYS.retryInterval);
-    }
+function storePageContext() {
+    const context = extractPageContext();
+    chrome.storage.local.set({ [CONFIG.PAGE_CONTEXT_KEY]: context });
 }
-
-// Initialize content script
-chrome.storage.local.get([CONFIG.STORAGE_KEY], function(result) {
-    if (result[CONFIG.STORAGE_KEY]) {
-        // Wait for Vue to initialize
-        setTimeout(() => {
-            if (document.readyState === 'complete') {
-                fillInputAndSubmit(result[CONFIG.STORAGE_KEY]);
-            } else {
-                window.addEventListener('load', () => fillInputAndSubmit(result[CONFIG.STORAGE_KEY]));
-            }
-        }, CONFIG.DELAYS.vueInit);
-    }
-});
-
-// Inject external stylesheet
-const linkElement = document.createElement('link');
-linkElement.rel = 'stylesheet';
-linkElement.href = chrome.runtime.getURL('content-styles.css');
-document.head.appendChild(linkElement);
 
 // Price detection and budget warning functionality
 function addBudgetWarnings() {
@@ -186,20 +199,37 @@ function addBudgetWarnings() {
     }
 }
 
-// Run the budget check when the page loads and when content changes
-document.addEventListener('DOMContentLoaded', addBudgetWarnings);
+// Initialize functionality
+function initialize() {
+    // Store initial page context
+    storePageContext();
+    
+    // Add budget warnings
+    addBudgetWarnings();
 
-// Use a MutationObserver to detect dynamically loaded content
-const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-        if (mutation.addedNodes.length > 0) {
-            addBudgetWarnings();
+    // Observe DOM changes for context updates
+    const contextObserver = new MutationObserver((mutations) => {
+        if (mutations.some(mutation => mutation.addedNodes.length > 0)) {
+            storePageContext();
         }
-    }
-});
+    });
 
-// Start observing changes to the DOM
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
-});
+    // Start observing changes to the DOM
+    contextObserver.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+}
+
+// Initialize when the page is ready
+if (document.readyState === 'complete') {
+    initialize();
+} else {
+    window.addEventListener('load', initialize);
+}
+
+// Inject external stylesheet
+const linkElement = document.createElement('link');
+linkElement.rel = 'stylesheet';
+linkElement.href = chrome.runtime.getURL('content-styles.css');
+document.head.appendChild(linkElement);

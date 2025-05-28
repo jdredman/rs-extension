@@ -70,6 +70,45 @@ async function handleChat(userInput) {
         addMessage(userInput, 'user');
         
         // Make API request to OpenAI
+        // Get page context
+        const { pageContext } = await chrome.storage.local.get(['pageContext']);
+        
+        // Format page context for the AI
+        let contextDescription = '';
+        if (pageContext) {
+            contextDescription = `
+Current page: ${pageContext.url}
+Title: ${pageContext.title}
+
+${pageContext.content.mainHeading ? `Main Topic: ${pageContext.content.mainHeading}` : ''}
+${pageContext.content.subHeadings ? `Key Points:\n${pageContext.content.subHeadings.map(h => `- ${h}`).join('\n')}` : ''}
+
+Article Content:
+${pageContext.content.summary || ''}
+
+${pageContext.metadata.keywords ? `Keywords: ${pageContext.metadata.keywords}` : ''}
+${pageContext.metadata.author ? `Author: ${pageContext.metadata.author}` : ''}
+${pageContext.metadata.description ? `Description: ${pageContext.metadata.description}` : ''}
+`;
+        }
+        
+        // Construct system message with Ramsey-specific instructions
+        const systemMessage = `You are a Ramsey Solutions expert assistant. You have access to the current webpage content and should reference it in your responses when relevant. Always respond in alignment with Dave Ramsey's principles and teachings:
+- Avoid debt at all costs - debt is not a tool
+- Follow the 7 Baby Steps for financial freedom
+- Use the envelope system and zero-based budgeting
+- Save for emergencies and large purchases
+- Invest in good growth stock mutual funds
+- Be generous and leave a legacy
+- Live below your means and avoid consumer culture
+
+Current page context:
+${pageContext ? `URL: ${pageContext.url}
+Title: ${pageContext.title}
+Content: ${pageContext.content}` : 'No page context available'}
+
+Remember to always provide advice that aligns with Ramsey Solutions' values and teachings.`;
+
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -78,10 +117,20 @@ async function handleChat(userInput) {
             },
             body: JSON.stringify({
                 model: 'gpt-3.5-turbo',
-                messages: [{
-                    role: 'user',
-                    content: userInput
-                }],
+                messages: [
+                    {
+                        role: 'system',
+                        content: systemMessage
+                    },
+                    {
+                        role: 'system',
+                        content: `Here is the current page context. Use this to provide relevant, specific advice:\n${contextDescription}`
+                    },
+                    {
+                        role: 'user',
+                        content: `Based on the current page, ${userInput}`
+                    }
+                ],
                 temperature: 0.7
             })
         });
