@@ -141,17 +141,30 @@ async function handleChat(userInput) {
         // Get fresh context
         const context = await getCurrentTabContext();
         
-        if (!context) {
-            addMessage("I'm having trouble accessing the page content. Please refresh the page and try again.", 'assistant');
-            return;
-        }
-
         // Add user message to chat
         addMessage(userInput, 'user');
         
-        // Format context for OpenAI
-        let contextDescription = `
-Current page: ${context.url}
+        // Check if user's question seems to relate to current page content
+        const isPageRelevant = context && (
+            userInput.toLowerCase().includes('this page') ||
+            userInput.toLowerCase().includes('this article') ||
+            userInput.toLowerCase().includes('current page') ||
+            userInput.toLowerCase().includes('what i\'m reading') ||
+            userInput.toLowerCase().includes('here') ||
+            userInput.toLowerCase().includes('this content') ||
+            (context.content.summary && 
+                context.content.summary.toLowerCase().split(' ').some(word => 
+                    userInput.toLowerCase().includes(word) && word.length > 4
+                )
+            )
+        );
+
+        // Format context for OpenAI only if relevant
+        let contextDescription = '';
+        if (isPageRelevant && context) {
+            contextDescription = `
+Current page context (user is asking about this content):
+URL: ${context.url}
 Title: ${context.title}
 
 ${context.content.mainHeading ? `Main Topic: ${context.content.mainHeading}` : ''}
@@ -163,22 +176,30 @@ ${context.content.summary || ''}
 ${context.metadata.keywords ? `Keywords: ${context.metadata.keywords}` : ''}
 ${context.metadata.author ? `Author: ${context.metadata.author}` : ''}
 `;
+        }
         // Construct system message with Ramsey-specific instructions
-        const systemMessage = `You are a Ramsey Solutions expert assistant. You have access to the current webpage content and should reference it in your responses when relevant. Always respond in alignment with Dave Ramsey's principles and teachings:
-- Avoid debt at all costs - debt is not a tool
-- Follow the 7 Baby Steps for financial freedom
-- Use the envelope system and zero-based budgeting
-- Save for emergencies and large purchases
-- Invest in good growth stock mutual funds
-- Be generous and leave a legacy
-- Live below your means and avoid consumer culture
+        const systemMessage = `I am an official representative of Ramsey Solutions. I speak and advise as part of our team, giving guidance that is 100% aligned with our financial principles, teachings, and tone. I follow our 7 Baby Steps, encourage debt freedom, promote zero-based budgeting, and always speak with the confidence and clarity of a Ramsey Personality.
 
-Current page context:
-${context ? `URL: ${context.url}
-Title: ${context.title}
-Content: ${context.content}` : 'No page context available'}
+I do not present alternative financial philosophies. I never recommend debt, credit cards, loans, or anything that contradicts our principles. Our method is the only and best option. I focus on behavior change and practical next steps, not financial theory.
 
-Remember to always provide advice that aligns with Ramsey Solutions' values and teachings.`;
+When helpful to the user, I include or link to trusted resources from these official sources ONLY:
+- https://www.ramseysolutions.com
+- https://labs.ramseysolutions.com/rp1/community
+- The YouTube playlist: https://www.youtube.com/playlist?list=PLN4yoAI6teRO_2ofccBr5IyP1xDra-h91
+- Our official tools and products like EveryDollar, FPU, SmartTax, and Ramsey Trusted Pros
+
+I use web search ONLY to retrieve real, up-to-date content from these trusted domains. I DO NOT generate or hallucinate URLs. I only return links that verifiably exist.
+
+When returning a link, I include a metadata preview with:
+- The page title
+- A short description
+- The site favicon (if available)
+
+I make responses conversational, actionable, and appropriately brief—just enough to be genuinely helpful. I am a guide, not just an answer box.
+
+My job is to help users take control of their money through our proven plan—and nothing else.
+
+Always provide advice that aligns with our values and teachings as an official team member.`;
 
         // Get API key from storage
         const { OPENAI_API_KEY } = await chrome.storage.local.get(['OPENAI_API_KEY']);
@@ -186,6 +207,30 @@ Remember to always provide advice that aligns with Ramsey Solutions' values and 
             addMessage('Error: OpenAI API key not found.', 'assistant');
             return;
         }
+
+        // Build messages array
+        const messages = [
+            {
+                role: 'system',
+                content: systemMessage
+            }
+        ];
+
+        // Add context as a separate system message only if relevant
+        if (contextDescription) {
+            messages.push({
+                role: 'system',
+                content: `Here is the current page context that the user is asking about:\n${contextDescription}`
+            });
+        }
+
+        // Add user message
+        messages.push({
+            role: 'user',
+            content: contextDescription ? 
+                `Based on the current page content, ${userInput}` : 
+                userInput
+        });
 
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -195,20 +240,7 @@ Remember to always provide advice that aligns with Ramsey Solutions' values and 
             },
             body: JSON.stringify({
                 model: 'gpt-3.5-turbo',
-                messages: [
-                    {
-                        role: 'system',
-                        content: systemMessage
-                    },
-                    {
-                        role: 'system',
-                        content: `Here is the current page context. Use this to provide relevant, specific advice:\n${contextDescription}`
-                    },
-                    {
-                        role: 'user',
-                        content: `Based on the current page, ${userInput}`
-                    }
-                ],
+                messages: messages,
                 temperature: 0.7
             })
         });
