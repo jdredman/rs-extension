@@ -604,11 +604,18 @@ function initializeEventListeners() {
     });
 
     elements.userInput.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            elements.submitButton.click();
-        }
-        if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
-            e.stopPropagation();
+        if (e.key === 'Enter') {
+            if (e.shiftKey) {
+                // Shift+Enter: Allow default behavior (new line)
+                return;
+            } else {
+                // Enter without Shift: Submit the form
+                e.preventDefault();
+                const text = elements.userInput.value.trim();
+                if (text) {
+                    handleSubmission(text);
+                }
+            }
         }
     });
 
