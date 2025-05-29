@@ -23,7 +23,10 @@ let elements = {
     historyView: null,
     headerButton: null,
     headerButtonIcon: null,
-    historyList: null
+    historyList: null,
+    videoCarouselTrack: null,
+    carouselPrev: null,
+    carouselNext: null
 };
 
 // Current conversation state
@@ -35,6 +38,47 @@ let currentConversation = {
 
 // Flag to prevent auto-save when just viewing conversations
 let isViewingOnly = false;
+
+// Video carousel state
+let videoCarousel = {
+    videos: [],
+    currentIndex: 0,
+    itemsVisible: 2 // Number of videos visible at once
+};
+
+// Static video data
+const RAMSEY_VIDEOS = [
+    {
+        id: 'ramsey1',
+        title: 'Stop Comparing Yourself to Others and Focus on Your Own Journey',
+        thumbnail: 'https://cdn.ramseysolutions.net/static-assets/b2c/shows/trs/20250507-H2S2-ccf0f3a2-c896-465f-8a57-89d7230f6a5c.0000004.jpg',
+        url: 'https://labs.ramseysolutions.com/rp1/calls/a879b3ef-788c-497e-9796-8a5d0a284bb5'
+    },
+    {
+        id: 'ramsey2',
+        title: 'Breaking Free from Debt: A Step-by-Step Plan to Financial Freedom',
+        thumbnail: 'https://cdn.ramseysolutions.net/static-assets/b2c/shows/trs/20250501-H2S4-ccf0f3a2-c896-465f-8a57-89d7230f6a5c.0000003.jpg',
+        url: 'https://labs.ramseysolutions.com/rp1/calls/a9a1a1fd-db52-4ba7-aca4-a45dff4f5f89'
+    },
+    {
+        id: 'ramsey3',
+        title: 'Navigating Homeownership and Real Estate Goals as New Parents',
+        thumbnail: 'https://cdn.ramseysolutions.net/static-assets/b2c/shows/trs/20250505-H2S2-ccf0f3a2-c896-465f-8a57-89d7230f6a5c.0000003.jpg',
+        url: 'https://labs.ramseysolutions.com/rp1/calls/c419280a-fb36-4765-8749-5e5d8af04473'
+    },
+    {
+        id: 'ramsey4',
+        title: 'Don\'t Take a Pay Cut! Find a Job You Love Instead',
+        thumbnail: 'https://cdn.ramseysolutions.net/static-assets/b2c/shows/trs/20250422-H3S3-ccf0f3a2-c896-465f-8a57-89d7230f6a5c.0000001.jpg',
+        url: 'https://labs.ramseysolutions.com/rp1/calls/2b494140-1caf-4551-ad42-fd289c1d077b'
+    },
+    {
+        id: 'ramsey5',
+        title: 'From Broke to Business Success: Navigating Restaurant',
+        thumbnail: 'https://cdn.ramseysolutions.net/static-assets/b2c/shows/trs/20250331-H3S2-ccf0f3a2-c896-465f-8a57-89d7230f6a5c.0000006.jpg',
+        url: 'https://labs.ramseysolutions.com/rp1/calls/55481e39-3b53-44bd-913b-f06c21b0f0d6'
+    }
+];
 
 /**
  * Gets the current tab's context
@@ -567,6 +611,84 @@ function initializeEventListeners() {
 }
 
 /**
+ * Video Carousel Functions
+ */
+
+/**
+ * Renders the video carousel with current videos
+ */
+function renderVideoCarousel() {
+    if (!elements.videoCarouselTrack) return;
+    
+    videoCarousel.videos = RAMSEY_VIDEOS;
+    elements.videoCarouselTrack.innerHTML = '';
+    
+    videoCarousel.videos.forEach(video => {
+        const videoItem = document.createElement('a');
+        videoItem.className = 'video-item';
+        videoItem.href = video.url;
+        videoItem.target = '_blank';
+        videoItem.rel = 'noopener noreferrer';
+        
+        videoItem.innerHTML = `
+            <div class="video-thumbnail-container">
+                <img src="${video.thumbnail}" alt="${video.title}" class="video-thumbnail">
+            </div>
+            <div class="video-info">
+                <p class="video-title">${video.title}</p>
+            </div>
+        `;
+        
+        elements.videoCarouselTrack.appendChild(videoItem);
+    });
+    
+    updateCarouselButtons();
+}
+
+/**
+ * Moves the carousel in the specified direction
+ * @param {string} direction - 'prev' or 'next'
+ */
+function moveCarousel(direction) {
+    const maxIndex = Math.max(0, videoCarousel.videos.length - videoCarousel.itemsVisible);
+    
+    if (direction === 'next' && videoCarousel.currentIndex < maxIndex) {
+        videoCarousel.currentIndex++;
+    } else if (direction === 'prev' && videoCarousel.currentIndex > 0) {
+        videoCarousel.currentIndex--;
+    }
+    
+    const translateX = -(videoCarousel.currentIndex * (160 + 12)); // 160px width + 12px gap
+    elements.videoCarouselTrack.style.transform = `translateX(${translateX}px)`;
+    
+    updateCarouselButtons();
+}
+
+/**
+ * Updates the carousel navigation buttons' enabled/disabled state
+ */
+function updateCarouselButtons() {
+    if (!elements.carouselPrev || !elements.carouselNext) return;
+    
+    const maxIndex = Math.max(0, videoCarousel.videos.length - videoCarousel.itemsVisible);
+    
+    elements.carouselPrev.disabled = videoCarousel.currentIndex === 0;
+    elements.carouselNext.disabled = videoCarousel.currentIndex >= maxIndex;
+}
+
+/**
+ * Initializes video carousel event listeners
+ */
+function initializeVideoCarousel() {
+    if (elements.carouselPrev && elements.carouselNext) {
+        elements.carouselPrev.addEventListener('click', () => moveCarousel('prev'));
+        elements.carouselNext.addEventListener('click', () => moveCarousel('next'));
+    }
+    
+    renderVideoCarousel();
+}
+
+/**
  * Gets the current active view
  * @returns {string} - 'switcher', 'chat', or 'history'
  */
@@ -595,14 +717,19 @@ function initializePopup() {
         historyView: document.getElementById('historyView'),
         headerButton: document.getElementById('headerButton'),
         headerButtonIcon: document.getElementById('headerButtonIcon'),
-        historyList: document.getElementById('historyList')
+        historyList: document.getElementById('historyList'),
+        videoCarouselTrack: document.getElementById('videoCarouselTrack'),
+        carouselPrev: document.getElementById('carouselPrev'),
+        carouselNext: document.getElementById('carouselNext')
     };
 
     // Start with app switcher view
     switchView('switcher');
 
     initializeEventListeners();
+    initializeVideoCarousel();
     adjustTextareaHeight(elements.userInput);
+    initializeVideoCarousel();
 }
 
 // Initialize when DOM is ready
