@@ -23,8 +23,8 @@
     --primary-blue-light: #d8f1fc;
     --background-white: #ffffff;
     --background-light-blue: #ebf4fa;
-    --text-dark: #333333;
-    --text-grey: #666666;
+    --text-dark: #1f2426;
+    --text-grey: #495257;
     
     /* Shadows */
     --shadow-blue: rgba(0, 178, 246, 0.95);
@@ -221,12 +221,22 @@ body {
 }
 
 /* App Switcher Styles */
+.app-switcher-section {
+  margin: 24px 24px 24px 24px;
+}
+
+.app-switcher-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-grey);
+  margin: 0 0 16px 0;
+}
+
 .app-switcher {
   display: block;
   padding: 16px;
   background: #ebf4fa;
   border-radius: 16px;
-  margin: 32px 24px;
 }
 
 /* App switcher grid layout */
@@ -319,7 +329,7 @@ body {
 .video-section-title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-dark);
+  color: var(--text-grey);
   margin: 0;
 }
 
