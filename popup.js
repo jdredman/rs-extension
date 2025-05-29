@@ -24,6 +24,7 @@ let elements = {
     headerButton: null,
     headerButtonIcon: null,
     historyList: null,
+    videoSection: null,
     videoCarouselTrack: null,
     carouselPrev: null,
     carouselNext: null
@@ -43,7 +44,7 @@ let isViewingOnly = false;
 let videoCarousel = {
     videos: [],
     currentIndex: 0,
-    itemsVisible: 2 // Number of videos visible at once
+    itemsVisible: 3 // Number of videos visible at once (fits better with 200px width)
 };
 
 // Static video data
@@ -209,6 +210,7 @@ async function loadConversation(conversationId) {
             elements.appSwitcherView.classList.add('hidden');
             elements.historyView.classList.add('hidden');
             elements.chatView.classList.remove('hidden');
+            elements.videoSection?.classList.add('hidden');
             updateHeaderButton('chat');
         }
     } catch (error) {
@@ -299,6 +301,13 @@ function switchView(view) {
     elements.appSwitcherView.classList.add('hidden');
     elements.chatView.classList.add('hidden');
     elements.historyView.classList.add('hidden');
+    
+    // Hide/show video section based on view
+    if (view === 'chat' || view === 'history') {
+        elements.videoSection?.classList.add('hidden');
+    } else {
+        elements.videoSection?.classList.remove('hidden');
+    }
     
     // Update header button
     updateHeaderButton(view);
@@ -658,7 +667,7 @@ function moveCarousel(direction) {
         videoCarousel.currentIndex--;
     }
     
-    const translateX = -(videoCarousel.currentIndex * (160 + 12)); // 160px width + 12px gap
+    const translateX = -(videoCarousel.currentIndex * (200 + 12)); // 200px width + 12px gap
     elements.videoCarouselTrack.style.transform = `translateX(${translateX}px)`;
     
     updateCarouselButtons();
@@ -718,6 +727,7 @@ function initializePopup() {
         headerButton: document.getElementById('headerButton'),
         headerButtonIcon: document.getElementById('headerButtonIcon'),
         historyList: document.getElementById('historyList'),
+        videoSection: document.getElementById('videoSection'),
         videoCarouselTrack: document.getElementById('videoCarouselTrack'),
         carouselPrev: document.getElementById('carouselPrev'),
         carouselNext: document.getElementById('carouselNext')
@@ -729,7 +739,6 @@ function initializePopup() {
     initializeEventListeners();
     initializeVideoCarousel();
     adjustTextareaHeight(elements.userInput);
-    initializeVideoCarousel();
 }
 
 // Initialize when DOM is ready
