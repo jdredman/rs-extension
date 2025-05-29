@@ -44,7 +44,10 @@ let isViewingOnly = false;
 let videoCarousel = {
     videos: [],
     currentIndex: 0,
-    itemsVisible: 3 // Number of videos visible at once (fits better with 200px width)
+    itemsVisible: 3, // Default, will be calculated dynamically
+    containerWidth: 0,
+    itemWidth: 0,
+    gap: 12
 };
 
 // Static video data
@@ -78,6 +81,18 @@ const RAMSEY_VIDEOS = [
         title: 'From Broke to Business Success: Navigating Restaurant',
         thumbnail: 'https://cdn.ramseysolutions.net/static-assets/b2c/shows/trs/20250331-H3S2-ccf0f3a2-c896-465f-8a57-89d7230f6a5c.0000006.jpg',
         url: 'https://labs.ramseysolutions.com/rp1/calls/55481e39-3b53-44bd-913b-f06c21b0f0d6'
+    },
+    {
+        id: 'ramsey6',
+        title: 'Building Wealth While Raising Kids: A Parent\'s Financial Strategy',
+        thumbnail: 'https://cdn.ramseysolutions.net/static-assets/b2c/shows/trs/20250423-H1S1-ccf0f3a2-c896-465f-8a57-89d7230f6a5c.0000002.jpg',
+        url: 'https://labs.ramseysolutions.com/rp1/calls/8b7f3c89-2d45-4e6a-9c8f-1a5e7f9d3c2b'
+    },
+    {
+        id: 'ramsey7',
+        title: 'Smart Money Moves for Recent College Graduates',
+        thumbnail: 'https://cdn.ramseysolutions.net/static-assets/b2c/shows/trs/20250429-H2S1-ccf0f3a2-c896-465f-8a57-89d7230f6a5c.0000005.jpg',
+        url: 'https://labs.ramseysolutions.com/rp1/calls/4c9e2b8a-6f1d-4a3e-8b5c-9d7f2e4a6c8b'
     }
 ];
 
@@ -207,7 +222,7 @@ async function loadConversation(conversationId) {
             });
             
             // Switch to chat view without triggering conversation reset
-            elements.appSwitcherView.classList.add('hidden');
+            elements.appSwitcherSection?.classList.add('hidden');
             elements.historyView.classList.add('hidden');
             elements.chatView.classList.remove('hidden');
             elements.videoSection?.classList.add('hidden');
@@ -298,7 +313,7 @@ function updateHeaderButton(view) {
  */
 function switchView(view) {
     // Hide all views
-    elements.appSwitcherView.classList.add('hidden');
+    elements.appSwitcherSection?.classList.add('hidden');
     elements.chatView.classList.add('hidden');
     elements.historyView.classList.add('hidden');
     
@@ -322,7 +337,7 @@ function switchView(view) {
             break;
         case 'switcher':
         default:
-            elements.appSwitcherView.classList.remove('hidden');
+            elements.appSwitcherSection?.classList.remove('hidden');
             // Only save and start new conversation when switching back to switcher
             // and not just viewing a conversation
             if (currentConversation.messages.length > 0 && !isViewingOnly) {
@@ -624,20 +639,65 @@ function initializeEventListeners() {
  */
 
 /**
+ * Calculates responsive carousel dimensions
+ */
+function calculateCarouselDimensions() {
+    if (!elements.videoCarouselTrack) return;
+    
+    const container = elements.videoCarouselTrack.parentElement;
+    if (!container) return;
+    
+    // Get container width
+    videoCarousel.containerWidth = container.offsetWidth;
+    
+    // Calculate optimal item width and count
+    const minItemWidth = 180;
+    const maxItemWidth = 220;
+    const gap = videoCarousel.gap;
+    
+    // Try to fit 3 items first, then 2 if too narrow
+    let itemsToFit = 3;
+    let calculatedItemWidth = (videoCarousel.containerWidth - (gap * (itemsToFit - 1))) / itemsToFit;
+    
+    if (calculatedItemWidth < minItemWidth) {
+        itemsToFit = 2;
+        calculatedItemWidth = (videoCarousel.containerWidth - (gap * (itemsToFit - 1))) / itemsToFit;
+    }
+    
+    // Ensure item width is within bounds
+    videoCarousel.itemWidth = Math.min(Math.max(calculatedItemWidth, minItemWidth), maxItemWidth);
+    videoCarousel.itemsVisible = itemsToFit;
+    
+    // Update CSS custom property for responsive width
+    document.documentElement.style.setProperty('--carousel-item-width', `${videoCarousel.itemWidth}px`);
+}
+
+/**
  * Renders the video carousel with current videos
  */
 function renderVideoCarousel() {
     if (!elements.videoCarouselTrack) return;
     
+    // Set up video data and reset carousel state
     videoCarousel.videos = RAMSEY_VIDEOS;
+    videoCarousel.currentIndex = 0;
     elements.videoCarouselTrack.innerHTML = '';
     
+    // Calculate responsive dimensions
+    calculateCarouselDimensions();
+    
+    // Clear any existing transform
+    elements.videoCarouselTrack.style.transform = 'translateX(0px)';
+    
+    // Create video items
     videoCarousel.videos.forEach(video => {
         const videoItem = document.createElement('a');
         videoItem.className = 'video-item';
         videoItem.href = video.url;
         videoItem.target = '_blank';
         videoItem.rel = 'noopener noreferrer';
+        videoItem.style.width = `${videoCarousel.itemWidth}px`;
+        videoItem.style.flexBasis = `${videoCarousel.itemWidth}px`;
         
         videoItem.innerHTML = `
             <div class="video-thumbnail-container">
@@ -651,6 +711,7 @@ function renderVideoCarousel() {
         elements.videoCarouselTrack.appendChild(videoItem);
     });
     
+    // Update navigation button states
     updateCarouselButtons();
 }
 
@@ -659,17 +720,25 @@ function renderVideoCarousel() {
  * @param {string} direction - 'prev' or 'next'
  */
 function moveCarousel(direction) {
+    if (!elements.videoCarouselTrack || videoCarousel.videos.length === 0) return;
+    
+    // Calculate maximum index based on total videos and visible items
     const maxIndex = Math.max(0, videoCarousel.videos.length - videoCarousel.itemsVisible);
     
+    // Update current index based on direction
     if (direction === 'next' && videoCarousel.currentIndex < maxIndex) {
         videoCarousel.currentIndex++;
     } else if (direction === 'prev' && videoCarousel.currentIndex > 0) {
         videoCarousel.currentIndex--;
     }
     
-    const translateX = -(videoCarousel.currentIndex * (200 + 12)); // 200px width + 12px gap
+    // Calculate translation distance using actual item width and gap
+    const translateX = -(videoCarousel.currentIndex * (videoCarousel.itemWidth + videoCarousel.gap));
+    
+    // Apply transformation
     elements.videoCarouselTrack.style.transform = `translateX(${translateX}px)`;
     
+    // Update button states
     updateCarouselButtons();
 }
 
@@ -677,12 +746,22 @@ function moveCarousel(direction) {
  * Updates the carousel navigation buttons' enabled/disabled state
  */
 function updateCarouselButtons() {
-    if (!elements.carouselPrev || !elements.carouselNext) return;
+    if (!elements.carouselPrev || !elements.carouselNext || videoCarousel.videos.length === 0) return;
     
     const maxIndex = Math.max(0, videoCarousel.videos.length - videoCarousel.itemsVisible);
     
+    // Disable prev button if at the beginning
     elements.carouselPrev.disabled = videoCarousel.currentIndex === 0;
-    elements.carouselNext.disabled = videoCarousel.currentIndex >= maxIndex;
+    
+    // Disable next button if at the end or if all videos fit in view
+    elements.carouselNext.disabled = videoCarousel.currentIndex >= maxIndex || videoCarousel.videos.length <= videoCarousel.itemsVisible;
+    
+    // Hide navigation buttons entirely if all videos fit in the visible area
+    const shouldShowNavigation = videoCarousel.videos.length > videoCarousel.itemsVisible;
+    const carouselControls = document.querySelector('.carousel-controls');
+    if (carouselControls) {
+        carouselControls.style.display = shouldShowNavigation ? 'flex' : 'none';
+    }
 }
 
 /**
@@ -692,7 +771,49 @@ function initializeVideoCarousel() {
     if (elements.carouselPrev && elements.carouselNext) {
         elements.carouselPrev.addEventListener('click', () => moveCarousel('prev'));
         elements.carouselNext.addEventListener('click', () => moveCarousel('next'));
+        
+        // Add keyboard navigation
+        elements.carouselPrev.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                moveCarousel('prev');
+            }
+        });
+        
+        elements.carouselNext.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                moveCarousel('next');
+            }
+        });
     }
+    
+    // Add arrow key navigation for the carousel
+    document.addEventListener('keydown', (e) => {
+        // Only handle arrow keys when in app switcher view and not focused on input
+        if (getCurrentView() === 'switcher' && !elements.userInput.matches(':focus')) {
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                moveCarousel('prev');
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                moveCarousel('next');
+            }
+        }
+    });
+    
+    // Add resize listener to recalculate carousel dimensions
+    window.addEventListener('resize', () => {
+        if (getCurrentView() === 'switcher') {
+            setTimeout(() => {
+                calculateCarouselDimensions();
+                // Reset to beginning and update buttons
+                videoCarousel.currentIndex = 0;
+                elements.videoCarouselTrack.style.transform = 'translateX(0px)';
+                updateCarouselButtons();
+            }, 100);
+        }
+    });
     
     renderVideoCarousel();
 }
@@ -702,7 +823,7 @@ function initializeVideoCarousel() {
  * @returns {string} - 'switcher', 'chat', or 'history'
  */
 function getCurrentView() {
-    if (!elements.appSwitcherView.classList.contains('hidden')) {
+    if (!elements.appSwitcherSection?.classList.contains('hidden')) {
         return 'switcher';
     } else if (!elements.chatView.classList.contains('hidden')) {
         return 'chat';
@@ -722,6 +843,7 @@ function initializePopup() {
         appLinks: document.querySelectorAll('.app-item'),
         chatMessages: document.getElementById('chatMessages'),
         appSwitcherView: document.getElementById('appSwitcherView'),
+        appSwitcherSection: document.querySelector('.app-switcher-section'),
         chatView: document.getElementById('chatView'),
         historyView: document.getElementById('historyView'),
         headerButton: document.getElementById('headerButton'),

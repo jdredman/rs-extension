@@ -140,7 +140,7 @@ body {
 .history-header {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: left;
     margin-bottom: 24px;
     position: relative;
 }
@@ -149,7 +149,7 @@ body {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: var(--text-dark);
+    color: var(--text-grey);
 }
 
 .history-list {
@@ -339,6 +339,7 @@ body {
 
 .carousel-container {
   width: 100%;
+  position: relative;
 }
 
 .carousel-controls {
@@ -382,13 +383,17 @@ body {
 
 .carousel-track {
   display: flex;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
   gap: 12px;
   width: fit-content;
+  will-change: transform;
 }
 
 .video-item {
-  flex: 0 0 200px;
+  flex: 0 0 auto;
+  width: var(--carousel-item-width, 200px);
+  min-width: 180px;
+  max-width: 220px;
   text-decoration: none;
   color: inherit;
   border-radius: var(--radius-md);
