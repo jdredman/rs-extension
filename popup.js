@@ -79,9 +79,58 @@ function addMessage(text, type) {
     }
     const messageEl = document.createElement('div');
     messageEl.classList.add('message', `${type}-message`);
-    messageEl.textContent = text;
+    
+    if (type === 'assistant') {
+        // Process markdown-like formatting for assistant messages
+        const formattedText = formatAssistantMessage(text);
+        messageEl.innerHTML = formattedText;
+    } else {
+        // Keep user messages as plain text
+        messageEl.textContent = text;
+    }
+    
     elements.chatMessages.appendChild(messageEl);
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+}
+
+/**
+ * Formats assistant messages with basic markdown-like formatting
+ * @param {string} text - The raw text to format
+ * @returns {string} - HTML formatted text
+ */
+function formatAssistantMessage(text) {
+    // Escape HTML to prevent XSS
+    let formatted = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    
+    // Apply basic markdown formatting
+    formatted = formatted
+        // Bold text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Italic text
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        // Code blocks
+        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        // Inline code
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        // Line breaks
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    
+    // Handle lists
+    formatted = formatted.replace(/^- (.*$)/gim, '<li>$1</li>');
+    formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    formatted = formatted.replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>');
+    formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ol>$1</ol>');
+    
+    // Wrap in paragraphs if not already wrapped
+    if (!formatted.includes('<p>') && !formatted.includes('<ul>') && !formatted.includes('<ol>')) {
+        formatted = '<p>' + formatted + '</p>';
+    }
+    
+    return formatted;
 }
 
 /**
