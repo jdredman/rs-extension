@@ -33,6 +33,9 @@ let currentConversation = {
     createdAt: null
 };
 
+// Flag to prevent auto-save when just viewing conversations
+let isViewingOnly = false;
+
 /**
  * Gets the current tab's context
  */
@@ -68,7 +71,7 @@ async function getCurrentTabContext() {
  * Conversation History Management
  */
 async function saveConversation() {
-    if (currentConversation.messages.length === 0) return;
+    if (currentConversation.messages.length === 0 || isViewingOnly) return;
     
     try {
         const { [CONFIG.CONVERSATIONS_KEY]: conversations = [] } = await chrome.storage.local.get([CONFIG.CONVERSATIONS_KEY]);
@@ -134,6 +137,7 @@ function startNewConversation() {
         createdAt: null
     };
     elements.chatMessages.innerHTML = '';
+    isViewingOnly = false; // Reset viewing flag when starting new conversation
 }
 
 async function loadConversation(conversationId) {
@@ -142,6 +146,9 @@ async function loadConversation(conversationId) {
         const conversation = conversations.find(conv => conv.id === conversationId);
         
         if (conversation) {
+            // Set viewing flag to prevent auto-save when just viewing
+            isViewingOnly = true;
+            
             currentConversation = {
                 id: conversation.id,
                 messages: [...conversation.messages],
@@ -154,8 +161,11 @@ async function loadConversation(conversationId) {
                 addMessageToDOM(msg.text, msg.type);
             });
             
-            // Switch to chat view
-            switchView('chat');
+            // Switch to chat view without triggering conversation reset
+            elements.appSwitcherView.classList.add('hidden');
+            elements.historyView.classList.add('hidden');
+            elements.chatView.classList.remove('hidden');
+            updateHeaderButton('chat');
         }
     } catch (error) {
         console.error('Error loading conversation:', error);
@@ -174,7 +184,7 @@ async function renderHistoryList() {
         <div class="history-item" data-conversation-id="${conv.id}">
             <div class="history-item-header">
                 <span class="history-item-date">${formatDate(conv.createdAt)}</span>
-                <button class="history-item-delete" onclick="deleteConversation('${conv.id}')" title="Delete conversation">
+                <button class="history-item-delete" data-conversation-id="${conv.id}" title="Delete conversation">
                     ×
                 </button>
             </div>
@@ -189,6 +199,15 @@ async function renderHistoryList() {
                 const conversationId = item.dataset.conversationId;
                 loadConversation(conversationId);
             }
+        });
+    });
+    
+    // Add click listeners to delete buttons
+    elements.historyList.querySelectorAll('.history-item-delete').forEach(deleteBtn => {
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering the conversation click
+            const conversationId = deleteBtn.dataset.conversationId;
+            deleteConversation(conversationId);
         });
     });
 }
@@ -251,11 +270,15 @@ function switchView(view) {
         case 'switcher':
         default:
             elements.appSwitcherView.classList.remove('hidden');
-            // Save conversation when leaving chat
-            if (currentConversation.messages.length > 0) {
+            // Only save and start new conversation when switching back to switcher
+            // and not just viewing a conversation
+            if (currentConversation.messages.length > 0 && !isViewingOnly) {
                 saveConversation();
             }
-            startNewConversation();
+            // Only start new conversation when explicitly switching to switcher
+            if (view === 'switcher') {
+                startNewConversation();
+            }
             break;
     }
 }
@@ -269,6 +292,9 @@ function addMessage(text, type) {
     if (elements.chatView.classList.contains('hidden')) {
         switchView('chat');
     }
+    
+    // Clear viewing flag when user actively adds messages
+    isViewingOnly = false;
     
     // Start new conversation if needed
     if (!currentConversation.createdAt) {
@@ -554,9 +580,6 @@ function getCurrentView() {
     }
     return 'switcher';
 }
-
-// Make deleteConversation available globally for onclick handlers
-window.deleteConversation = deleteConversation;
 
 /**
  * Initializes the popup
