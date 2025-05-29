@@ -13,6 +13,9 @@
       <img src="https://labs.ramseysolutions.com/rp1/ramsey-main-logo.svg" 
            alt="Ramsey Solutions Logo" 
            class="logo">
+      <button id="headerButton" class="header-button">
+        <img id="headerButtonIcon" src="images/history-icon.svg" alt="History" width="20" height="20">
+      </button>
     </header>
     
     <!-- Main content area -->
@@ -37,8 +40,15 @@
 
       <!-- Chat view (initially hidden) -->
       <div id="chatView" class="chat-view hidden">
-        <button id="closeChatButton" class="close-button">×</button>
         <div id="chatMessages" class="chat-messages"></div>
+      </div>
+
+      <!-- History view (initially hidden) -->
+      <div id="historyView" class="history-view hidden">
+        <div class="history-header">
+          <h3>Conversation History</h3>
+        </div>
+        <div id="historyList" class="history-list"></div>
       </div>
     </div>
     

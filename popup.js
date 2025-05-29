@@ -6,8 +6,10 @@
 // Configuration
 const CONFIG = {
     STORAGE_KEY: 'userInput',
+    CONVERSATIONS_KEY: 'conversationHistory',
     MAX_RETRIES: 3,
-    RETRY_DELAY: 1000
+    RETRY_DELAY: 1000,
+    MAX_CONVERSATIONS: 50
 };
 
 // DOM Elements
@@ -18,7 +20,17 @@ let elements = {
     chatMessages: null,
     appSwitcherView: null,
     chatView: null,
-    closeChatButton: null
+    historyView: null,
+    headerButton: null,
+    headerButtonIcon: null,
+    historyList: null
+};
+
+// Current conversation state
+let currentConversation = {
+    id: null,
+    messages: [],
+    createdAt: null
 };
 
 /**
@@ -53,18 +65,198 @@ async function getCurrentTabContext() {
 }
 
 /**
- * Switches between app switcher and chat views
- * @param {boolean} showChat - Whether to show chat view
+ * Conversation History Management
  */
-function switchView(showChat) {
-    if (showChat) {
-        elements.appSwitcherView.classList.add('hidden');
-        elements.chatView.classList.remove('hidden');
+async function saveConversation() {
+    if (currentConversation.messages.length === 0) return;
+    
+    try {
+        const { [CONFIG.CONVERSATIONS_KEY]: conversations = [] } = await chrome.storage.local.get([CONFIG.CONVERSATIONS_KEY]);
+        
+        const conversationToSave = {
+            id: currentConversation.id || Date.now().toString(),
+            messages: [...currentConversation.messages],
+            createdAt: currentConversation.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            preview: getConversationPreview(currentConversation.messages)
+        };
+        
+        // Remove existing conversation with same ID if updating
+        const filteredConversations = conversations.filter(conv => conv.id !== conversationToSave.id);
+        
+        // Add new conversation at the beginning
+        filteredConversations.unshift(conversationToSave);
+        
+        // Keep only the most recent conversations
+        const trimmedConversations = filteredConversations.slice(0, CONFIG.MAX_CONVERSATIONS);
+        
+        await chrome.storage.local.set({ [CONFIG.CONVERSATIONS_KEY]: trimmedConversations });
+        
+        // Update current conversation
+        currentConversation.id = conversationToSave.id;
+        currentConversation.createdAt = conversationToSave.createdAt;
+        
+    } catch (error) {
+        console.error('Error saving conversation:', error);
+    }
+}
+
+async function loadConversations() {
+    try {
+        const { [CONFIG.CONVERSATIONS_KEY]: conversations = [] } = await chrome.storage.local.get([CONFIG.CONVERSATIONS_KEY]);
+        return conversations;
+    } catch (error) {
+        console.error('Error loading conversations:', error);
+        return [];
+    }
+}
+
+async function deleteConversation(conversationId) {
+    try {
+        const conversations = await loadConversations();
+        const filteredConversations = conversations.filter(conv => conv.id !== conversationId);
+        await chrome.storage.local.set({ [CONFIG.CONVERSATIONS_KEY]: filteredConversations });
+        renderHistoryList();
+    } catch (error) {
+        console.error('Error deleting conversation:', error);
+    }
+}
+
+function getConversationPreview(messages) {
+    const userMessage = messages.find(msg => msg.type === 'user');
+    return userMessage ? userMessage.text.substring(0, 100) + (userMessage.text.length > 100 ? '...' : '') : 'New conversation';
+}
+
+function startNewConversation() {
+    currentConversation = {
+        id: null,
+        messages: [],
+        createdAt: null
+    };
+    elements.chatMessages.innerHTML = '';
+}
+
+async function loadConversation(conversationId) {
+    try {
+        const conversations = await loadConversations();
+        const conversation = conversations.find(conv => conv.id === conversationId);
+        
+        if (conversation) {
+            currentConversation = {
+                id: conversation.id,
+                messages: [...conversation.messages],
+                createdAt: conversation.createdAt
+            };
+            
+            // Render messages
+            elements.chatMessages.innerHTML = '';
+            conversation.messages.forEach(msg => {
+                addMessageToDOM(msg.text, msg.type);
+            });
+            
+            // Switch to chat view
+            switchView('chat');
+        }
+    } catch (error) {
+        console.error('Error loading conversation:', error);
+    }
+}
+
+async function renderHistoryList() {
+    const conversations = await loadConversations();
+    
+    if (conversations.length === 0) {
+        elements.historyList.innerHTML = '<div class="history-empty">No conversations yet. Start chatting to build your history!</div>';
+        return;
+    }
+    
+    elements.historyList.innerHTML = conversations.map(conv => `
+        <div class="history-item" data-conversation-id="${conv.id}">
+            <div class="history-item-header">
+                <span class="history-item-date">${formatDate(conv.createdAt)}</span>
+                <button class="history-item-delete" onclick="deleteConversation('${conv.id}')" title="Delete conversation">
+                    ×
+                </button>
+            </div>
+            <div class="history-item-preview">${conv.preview}</div>
+        </div>
+    `).join('');
+    
+    // Add click listeners to conversation items
+    elements.historyList.querySelectorAll('.history-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('history-item-delete')) {
+                const conversationId = item.dataset.conversationId;
+                loadConversation(conversationId);
+            }
+        });
+    });
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) {
+        return 'Today';
+    } else if (diffDays === 2) {
+        return 'Yesterday';
+    } else if (diffDays <= 7) {
+        return `${diffDays - 1} days ago`;
     } else {
-        elements.chatView.classList.add('hidden');
-        elements.appSwitcherView.classList.remove('hidden');
-        elements.chatMessages.innerHTML = ''; // Clear chat history
-        elements.userInput.value = ''; // Clear input
+        return date.toLocaleDateString();
+    }
+}
+
+/**
+ * Updates the header button based on current view
+ * @param {string} view - 'switcher', 'chat', or 'history'
+ */
+function updateHeaderButton(view) {
+    if (view === 'switcher') {
+        elements.headerButtonIcon.src = 'images/history-icon.svg';
+        elements.headerButtonIcon.alt = 'History';
+        elements.headerButton.title = 'Conversation History';
+    } else {
+        // Show close button for chat and history views
+        elements.headerButtonIcon.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23666666"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+        elements.headerButtonIcon.alt = 'Close';
+        elements.headerButton.title = 'Close';
+    }
+}
+
+/**
+ * Switches between app switcher, chat, and history views
+ * @param {string} view - 'switcher', 'chat', or 'history'
+ */
+function switchView(view) {
+    // Hide all views
+    elements.appSwitcherView.classList.add('hidden');
+    elements.chatView.classList.add('hidden');
+    elements.historyView.classList.add('hidden');
+    
+    // Update header button
+    updateHeaderButton(view);
+    
+    switch (view) {
+        case 'chat':
+            elements.chatView.classList.remove('hidden');
+            break;
+        case 'history':
+            elements.historyView.classList.remove('hidden');
+            renderHistoryList();
+            break;
+        case 'switcher':
+        default:
+            elements.appSwitcherView.classList.remove('hidden');
+            // Save conversation when leaving chat
+            if (currentConversation.messages.length > 0) {
+                saveConversation();
+            }
+            startNewConversation();
+            break;
     }
 }
 
@@ -75,8 +267,30 @@ function switchView(showChat) {
  */
 function addMessage(text, type) {
     if (elements.chatView.classList.contains('hidden')) {
-        switchView(true);
+        switchView('chat');
     }
+    
+    // Start new conversation if needed
+    if (!currentConversation.createdAt) {
+        currentConversation.createdAt = new Date().toISOString();
+    }
+    
+    // Add to current conversation
+    currentConversation.messages.push({ text, type });
+    
+    // Add to DOM
+    addMessageToDOM(text, type);
+    
+    // Auto-save conversation
+    saveConversation();
+}
+
+/**
+ * Adds a message to the DOM without affecting conversation state
+ * @param {string} text - The message text
+ * @param {string} type - Either 'user' or 'assistant'
+ */
+function addMessageToDOM(text, type) {
     const messageEl = document.createElement('div');
     messageEl.classList.add('message', `${type}-message`);
     
@@ -308,8 +522,14 @@ function initializeEventListeners() {
         adjustTextareaHeight(elements.userInput);
     });
 
-    elements.closeChatButton.addEventListener('click', () => {
-        switchView(false);
+    // Header button handles both history and close functionality
+    elements.headerButton.addEventListener('click', () => {
+        const currentView = getCurrentView();
+        if (currentView === 'switcher') {
+            switchView('history');
+        } else {
+            switchView('switcher');
+        }
     });
 
     elements.appLinks.forEach(link => {
@@ -319,6 +539,24 @@ function initializeEventListeners() {
         });
     });
 }
+
+/**
+ * Gets the current active view
+ * @returns {string} - 'switcher', 'chat', or 'history'
+ */
+function getCurrentView() {
+    if (!elements.appSwitcherView.classList.contains('hidden')) {
+        return 'switcher';
+    } else if (!elements.chatView.classList.contains('hidden')) {
+        return 'chat';
+    } else if (!elements.historyView.classList.contains('hidden')) {
+        return 'history';
+    }
+    return 'switcher';
+}
+
+// Make deleteConversation available globally for onclick handlers
+window.deleteConversation = deleteConversation;
 
 /**
  * Initializes the popup
@@ -331,12 +569,14 @@ function initializePopup() {
         chatMessages: document.getElementById('chatMessages'),
         appSwitcherView: document.getElementById('appSwitcherView'),
         chatView: document.getElementById('chatView'),
-        closeChatButton: document.getElementById('closeChatButton')
+        historyView: document.getElementById('historyView'),
+        headerButton: document.getElementById('headerButton'),
+        headerButtonIcon: document.getElementById('headerButtonIcon'),
+        historyList: document.getElementById('historyList')
     };
 
-    // Start with chat view hidden and app switcher visible
-    elements.chatView.classList.add('hidden');
-    elements.appSwitcherView.classList.remove('hidden');
+    // Start with app switcher view
+    switchView('switcher');
 
     initializeEventListeners();
     adjustTextareaHeight(elements.userInput);

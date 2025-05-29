@@ -76,6 +76,14 @@ body {
 /* Header */
 .rs-header {
     padding: 24px 24px 8px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    height: 32px;
+    width: auto;
 }
 
 /* Content area */
@@ -99,14 +107,11 @@ body {
     margin: 0 auto;
 }
 
-.close-button {
-    position: absolute;
-    top: 8px;
-    right: 8px;
+.header-button {
     background: none;
     border: none;
     color: var(--text-grey);
-    font-size: 24px;
+    font-size: 20px;
     width: 32px;
     height: 32px;
     border-radius: 16px;
@@ -114,14 +119,105 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2;
     transition: background-color var(--transition-fast);
-    background-color: white; /* Ensure button is visible */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add subtle shadow */
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.close-button:hover {
+.header-button:hover {
     background-color: var(--background-light-blue);
+}
+
+/* History view */
+.history-view {
+    height: 100%;
+    padding: 24px;
+    max-width: 600px;
+    position: relative;
+    margin: 0 auto;
+}
+
+.history-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.history-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+.history-item {
+    background: var(--background-light-blue);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    position: relative;
+}
+
+.history-item:hover {
+    background-color: #d8f1fc;
+}
+
+.history-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.history-item-date {
+    font-size: 12px;
+    color: var(--text-grey);
+    font-weight: 600;
+}
+
+.history-item-preview {
+    font-size: 14px;
+    color: var(--text-dark);
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.history-item-delete {
+    background: none;
+    border: none;
+    color: var(--text-grey);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.history-item-delete:hover {
+    background-color: rgba(255, 0, 0, 0.1);
+    color: #ff4444;
+}
+
+.history-empty {
+    text-align: center;
+    color: var(--text-grey);
+    font-style: italic;
+    margin-top: 48px;
 }
 
 /* App Switcher Styles */
