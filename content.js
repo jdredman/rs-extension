@@ -141,7 +141,7 @@ function checkForWarnings(context) {
     // Don't show warnings on Ramsey Solutions websites
     if (currentUrl.includes('ramseysolutions.com') || 
         currentUrl.includes('everydollar.com') || 
-        currentUrl.includes('daveramsey.com')) {
+        currentUrl.includes('financialpeace.com')) {
         return;
     }
     
