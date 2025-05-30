@@ -62,14 +62,11 @@
 }
 
 .rs-budget-warning-wrapper {
-    position: fixed;
-    top: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 999999;
+    position: static;
     border-radius: 16px;
     background-color: #ffffff;
     animation: rotateShadow 15s ease-in-out infinite, rotateGradient 20s linear infinite;
+    margin-bottom: 8px;
 }
 
 .rs-budget-warning-icon {
@@ -116,4 +113,85 @@
 
 .rs-budget-warning-close:hover {
     background-color: #f0f0f0;
+}
+
+/* Credit card warning styles - using same base styling as budget warning */
+.rs-credit-card-warning-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 12px 48px 12px 16px;
+    gap: 8px;
+    z-index: 1;
+}
+
+.rs-credit-card-warning-wrapper {
+    position: static;
+    border-radius: 16px;
+    background-color: #ffffff;
+    animation: rotateShadow 15s ease-in-out infinite, rotateGradient 20s linear infinite;
+    margin-bottom: 8px;
+}
+
+.rs-credit-card-warning-icon {
+    display: block;
+    width: 48px;
+    height: 48px;
+}
+
+.rs-credit-card-warning {
+    color: #333;
+    font-size: 14px;
+    font-weight: normal;
+    line-height: 1.4;
+    font-family: 'Gibson', sans-serif;
+}
+
+.rs-credit-card-warning-title {
+    font-weight: 600;
+}
+
+.rs-credit-card-warning a {
+    color: #0084c1;
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+.rs-credit-card-warning-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.rs-credit-card-warning-close:hover {
+    background-color: #f0f0f0;
+}
+
+/* Warning container for stacking multiple warnings */
+.rs-warnings-container {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.rs-warnings-container > * {
+    pointer-events: auto;
 }

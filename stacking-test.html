@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warning System Validation - Stacking & Session Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007cba;
+        }
+        .test-results {
+            background: #e7f3ff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .trigger-content {
+            background: #fff3cd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a8b;
+        }
+        .status {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 5px 0;
+        }
+        .status.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Warning System Validation Test</h1>
+    <p><strong>Purpose:</strong> Test the budget and credit card warning system with stacking and session-only dismissal.</p>
+
+    <div class="test-section">
+        <h2>📋 Test Instructions</h2>
+        <ol>
+            <li>Load this extension in Chrome developer mode</li>
+            <li>Refresh this page to ensure clean session state</li>
+            <li>Observe warnings appearing at the top (should stack vertically)</li>
+            <li>Test dismissal functionality</li>
+            <li>Refresh page to verify warnings reappear</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🛒 Shopping Cart Simulation</h2>
+        <div class="trigger-content">
+            <h3>Your Shopping Cart</h3>
+            <p>You have items in your cart ready for checkout. The total price is $299.99.</p>
+            <p>Please add to cart your selected items and proceed to purchase.</p>
+            <button onclick="simulateCheckout()">Buy Now - $299.99</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>💳 Credit Card Payment Section</h2>
+        <div class="trigger-content">
+            <h3>Payment Methods</h3>
+            <p>Choose your preferred payment method:</p>
+            <ul>
+                <li><strong>Credit Card</strong> - Visa, Mastercard, American Express</li>
+                <li>Debit Card - Direct bank payment</li>
+                <li>PayPal - Quick checkout</li>
+            </ul>
+            <p>Enter your credit card number, expiration date, and CVV below.</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Test Results</h2>
+        <div id="testResults" class="test-results">
+            <div>Loading test results...</div>
+        </div>
+        
+        <button onclick="runTests()">🔄 Re-run Tests</button>
+        <button onclick="clearSession()">🗑️ Clear Session Data</button>
+        <button onclick="location.reload()">↻ Refresh Page</button>
+    </div>
+
+    <script>
+        let testResults = {
+            budgetWarningDetected: false,
+            creditCardWarningDetected: false,
+            warningsStacked: false,
+            sessionDismissalWorks: false,
+            autoTimeout: false
+        };
+
+        function simulateCheckout() {
+            alert('🛒 Checkout simulation - This triggers shopping cart keywords!');
+        }
+
+        function runTests() {
+            console.log('🧪 Running warning system tests...');
+            
+            setTimeout(() => {
+                // Test 1: Check if warnings are present
+                const budgetWarning = document.querySelector('.rs-budget-warning-wrapper');
+                const creditCardWarning = document.querySelector('.rs-credit-card-warning-wrapper');
+                const warningsContainer = document.querySelector('.rs-warnings-container');
+                
+                testResults.budgetWarningDetected = !!budgetWarning;
+                testResults.creditCardWarningDetected = !!creditCardWarning;
+                
+                // Test 2: Check if warnings are stacked
+                if (warningsContainer && warningsContainer.children.length > 1) {
+                    testResults.warningsStacked = true;
+                }
+                
+                // Test 3: Check page content triggers
+                const pageText = document.body.textContent.toLowerCase();
+                const budgetTriggers = ['cart', 'checkout', 'purchase', 'buy now', '$', 'price'];
+                const creditCardTriggers = ['credit card', 'visa', 'mastercard', 'american express', 'cvv'];
+                
+                const budgetTriggersFound = budgetTriggers.some(trigger => pageText.includes(trigger));
+                const creditCardTriggersFound = creditCardTriggers.some(trigger => pageText.includes(trigger));
+                
+                console.log('Budget triggers found:', budgetTriggersFound);
+                console.log('Credit card triggers found:', creditCardTriggersFound);
+                console.log('Budget warning present:', testResults.budgetWarningDetected);
+                console.log('Credit card warning present:', testResults.creditCardWarningDetected);
+                console.log('Warnings stacked:', testResults.warningsStacked);
+                
+                updateTestDisplay();
+            }, 1000);
+        }
+
+        function clearSession() {
+            // This would normally clear session storage if we had access
+            console.log('🗑️ Session data would be cleared here');
+            alert('In the actual extension, this would clear session dismissal data');
+        }
+
+        function updateTestDisplay() {
+            const resultsDiv = document.getElementById('testResults');
+            
+            let html = '<h4>Test Results:</h4>';
+            
+            html += `<div class="status ${testResults.budgetWarningDetected ? 'pass' : 'fail'}">
+                Budget Warning: ${testResults.budgetWarningDetected ? '✅ DETECTED' : '❌ NOT DETECTED'}
+            </div>`;
+            
+            html += `<div class="status ${testResults.creditCardWarningDetected ? 'pass' : 'fail'}">
+                Credit Card Warning: ${testResults.creditCardWarningDetected ? '✅ DETECTED' : '❌ NOT DETECTED'}
+            </div>`;
+            
+            html += `<div class="status ${testResults.warningsStacked ? 'pass' : 'fail'}">
+                Warning Stacking: ${testResults.warningsStacked ? '✅ WORKING' : '❌ NOT WORKING'}
+            </div>`;
+            
+            const warningsContainer = document.querySelector('.rs-warnings-container');
+            if (warningsContainer) {
+                html += `<div class="status pass">
+                    Warnings Container: ✅ PRESENT (${warningsContainer.children.length} warnings)
+                </div>`;
+            } else {
+                html += `<div class="status fail">
+                    Warnings Container: ❌ NOT PRESENT
+                </div>`;
+            }
+            
+            html += '<h5>Manual Tests:</h5>';
+            html += '<ul>';
+            html += '<li>Click X button on warnings to test dismissal</li>';
+            html += '<li>Refresh page to verify warnings reappear (session-only dismissal)</li>';
+            html += '<li>Wait 10 seconds to test auto-dismissal</li>';
+            html += '</ul>';
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        // Auto-run tests when page loads
+        setTimeout(runTests, 2000);
+        
+        // Monitor for warning changes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList') {
+                    console.log('DOM changed, re-checking warnings...');
+                    setTimeout(runTests, 500);
+                }
+            });
+        });
+        
+        observer.observe(document.body, { childList: true, subtree: true });
+    </script>
+</body>
+</html>

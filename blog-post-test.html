@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Blog Post - No Warning Test</title>
+    <style>
+        body {
+            font-family: Georgia, serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #fafafa;
+        }
+        .article {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .article h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .article h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        .price-example {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #17a2b8;
+            margin: 20px 0;
+            font-style: italic;
+        }
+        .test-section {
+            background: #fff3cd;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <article class="article">
+        <h1>Understanding the True Cost of Financial Decisions</h1>
+        
+        <p><em>Published on Dave Ramsey's Blog - May 30, 2025</em></p>
+        
+        <p>When it comes to making smart financial decisions, it's crucial to understand the real cost of your choices. Let's explore some common scenarios where people often overlook the true price they're paying.</p>
+        
+        <h2>The Hidden Costs of Debt</h2>
+        
+        <p>Consider this example: if you finance a $25,000 car over 5 years at 7% interest, you'll end up paying approximately $29,500 total. That extra $4,500 could have been invested instead!</p>
+        
+        <div class="price-example">
+            "I thought I was getting a great deal on my new couch for just $89 per month. But after 3 years of payments, I realized I paid $3,204 for a $1,800 couch!" - Sarah, Nashville
+        </div>
+        
+        <h2>Emergency Fund vs. Investment Returns</h2>
+        
+        <p>Many people ask whether they should invest their emergency fund to get better returns. The peace of mind that comes from having $10,000 sitting in a boring savings account is worth more than the potential extra $500-800 you might earn in the stock market.</p>
+        
+        <h2>Real Estate Reality Check</h2>
+        
+        <p>When house hunting, remember that a $300,000 mortgage at 6% interest will cost you approximately $539,595 over 30 years. That's why Dave recommends:</p>
+        
+        <ul>
+            <li>Put down at least 20% ($60,000 on a $300,000 house)</li>
+            <li>Keep payments under 25% of your take-home pay</li>
+            <li>Choose a 15-year mortgage if possible to save $200,000+ in interest</li>
+        </ul>
+        
+        <h2>The Subscription Trap</h2>
+        
+        <p>Those "small" monthly subscriptions add up fast. A $9.99 streaming service, $12.99 music subscription, and $15.99 app premium plan might seem harmless, but that's $456.84 per year - money that could go toward your emergency fund or debt payoff.</p>
+        
+        <div class="price-example">
+            Calculate your own subscription costs: List every recurring payment from $5.99 coffee subscriptions to $79.99 software licenses. You might be shocked at the total!
+        </div>
+        
+        <p>Remember: every dollar has a job to do in your budget. Make sure each expense aligns with your values and long-term financial goals.</p>
+    </article>
+    
+    <div class="test-section">
+        <h2>🧪 Blog Post Test</h2>
+        <p><strong>Expected Behavior:</strong> NO budget warning should appear on this page.</p>
+        <p><strong>Reason:</strong> This is a blog post that mentions prices and dollar amounts but has no shopping cart, product pages, or purchase buttons.</p>
+        <p><strong>Content includes:</strong> Multiple price mentions ($25,000, $89, $3,204, etc.) but no purchase triggers.</p>
+        
+        <div id="testResults" style="margin-top: 15px; font-family: monospace; background: white; padding: 10px; border-radius: 5px;">
+            Loading test results...
+        </div>
+    </div>
+
+    <script>
+        // Test the warning system
+        setTimeout(() => {
+            console.log('🧪 Testing blog post (should NOT trigger warnings)...');
+            
+            const pageText = document.body.textContent.toLowerCase();
+            const budgetTriggers = ['cart', 'add to cart', 'buy now', 'checkout', 'purchase', 'item details'];
+            const priceReferences = ['$25,000', '$89', '$3,204', '$10,000', '$300,000'];
+            
+            const triggersFound = budgetTriggers.filter(trigger => pageText.includes(trigger));
+            const pricesFound = priceReferences.filter(price => pageText.includes(price.toLowerCase()));
+            
+            console.log('Budget triggers found:', triggersFound);
+            console.log('Price references found:', pricesFound);
+            
+            setTimeout(() => {
+                const budgetWarning = document.querySelector('.rs-budget-warning-wrapper');
+                
+                let results = '<h4>Test Results:</h4>';
+                results += `<div>Shopping triggers found: ${triggersFound.length > 0 ? triggersFound.join(', ') : 'None ✅'}</div>`;
+                results += `<div>Price references found: ${pricesFound.length} (${pricesFound.join(', ')})</div>`;
+                results += `<div>Budget warning present: ${budgetWarning ? '❌ YES (should not appear)' : '✅ NO (correct)'}</div>`;
+                
+                if (budgetWarning) {
+                    results += '<div style="color: red; font-weight: bold;">❌ ERROR: Warning should not appear on blog posts</div>';
+                } else {
+                    results += '<div style="color: green; font-weight: bold;">✅ SUCCESS: No warning on blog post (correct behavior)</div>';
+                }
+                
+                document.getElementById('testResults').innerHTML = results;
+            }, 1500);
+        }, 1000);
+    </script>
+</body>
+</html>

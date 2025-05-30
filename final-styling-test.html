@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Styling Test - Ramsey Extension</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-buttons {
+            margin: 20px 0;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 15px;
+            background: #0084c1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #006699;
+        }
+    </style>
+</head>
+<body>
+    <h1>Final Styling Test - Updated Warnings</h1>
+    
+    <div class="section">
+        <h2>Changes Made:</h2>
+        <ul>
+            <li>✅ Replaced emoji icons (💰, ⚠️) with supplied logo (48px version)</li>
+            <li>✅ Moved emojis to be inline with headers instead of separate icon elements</li>
+            <li>✅ Removed orange outline styling from credit card warnings</li>
+            <li>✅ Made all warning messages styled consistently like the budget warning</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Shopping Cart Context</h2>
+        <p>This page simulates a shopping cart environment to trigger budget warnings.</p>
+        <p>Current URL path includes "/cart" to trigger shopping-related warnings.</p>
+        <div>
+            <strong>Cart Items:</strong>
+            <ul>
+                <li>Product 1 - $29.99 - <button>Add to Cart</button></li>
+                <li>Product 2 - $49.99 - <button>Buy Now</button></li>
+            </ul>
+            <p><strong>Subtotal:</strong> $79.98</p>
+            <p><strong>Order Total:</strong> $85.98</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Payment Information</h2>
+        <p>This section contains credit card related keywords to trigger credit card warnings.</p>
+        <form>
+            <label>Payment Method:</label>
+            <select>
+                <option>Credit Card</option>
+                <option>Debit Card</option>
+                <option>Cash</option>
+            </select>
+            <br><br>
+            <label>Card Number:</label>
+            <input type="text" placeholder="1234 5678 9012 3456">
+            <br><br>
+            <label>CVV:</label>
+            <input type="text" placeholder="123">
+            <br><br>
+            <label>Expiration:</label>
+            <input type="text" placeholder="MM/YY">
+            <br><br>
+            <p>We accept Visa, Mastercard, American Express, and Discover cards.</p>
+        </form>
+    </div>
+
+    <div class="test-buttons">
+        <h3>Test Functions:</h3>
+        <button onclick="location.reload()">Reload Page (Reset Warnings)</button>
+        <button onclick="testBothWarnings()">Test Both Warnings</button>
+    </div>
+
+    <script>
+        function testBothWarnings() {
+            console.log('Current page content detected:');
+            console.log('- Shopping cart keywords present');
+            console.log('- Credit card keywords present');
+            console.log('- Both warnings should appear with new styling');
+            
+            // Log the expected behavior
+            console.log('Expected changes:');
+            console.log('1. Both warnings use Ramsey logo instead of emojis');
+            console.log('2. Emojis appear inline with titles');
+            console.log('3. Credit card warning has same blue styling as budget warning');
+            console.log('4. No orange border/outline on credit card warning');
+        }
+
+        // Auto-run test when page loads
+        window.addEventListener('load', () => {
+            console.log('Final styling test page loaded');
+            testBothWarnings();
+        });
+    </script>
+</body>
+</html>
