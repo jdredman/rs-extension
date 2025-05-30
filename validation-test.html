@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome Extension HTML Fix Validation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        /* Import the actual extension CSS */
+        .link-preview {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            background-color: #ffffff;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            transition: box-shadow 0.2s;
+        }
+        .link-preview:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .link-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #1a73e8;
+        }
+        .link-description {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.4;
+        }
+        .link-url {
+            font-size: 12px;
+            color: #9aa0a6;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chrome Extension HTML Fix Validation</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Single HTML Block (Original Issue)</h2>
+        <div id="test1-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Multiple HTML Blocks (Complex Scenario)</h2>
+        <div id="test2-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Mixed Content with HTML and Text</h2>
+        <div id="test3-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: No HTML Blocks (Text Only)</h2>
+        <div id="test4-result" class="result"></div>
+    </div>
+
+    <script>
+        // Copy the improved formatAssistantMessage function from popup.js
+        function createLinkCard(title, description, url) {
+            return `
+                <a href="${url}" target="_blank" class="link-preview">
+                    <div class="link-title">${title}</div>
+                    <div class="link-description">${description}</div>
+                    <div class="link-url">${url}</div>
+                </a>
+            `;
+        }
+
+        function createYouTubeEmbed(videoId) {
+            return `
+                <div style="margin: 10px 0;">
+                    <iframe width="300" height="169" src="https://www.youtube.com/embed/${videoId}" 
+                            frameborder="0" allowfullscreen style="border-radius: 8px;"></iframe>
+                </div>
+            `;
+        }
+
+        function createLinkPreview(result) {
+            return createLinkCard(result.title, result.description, result.url);
+        }
+
+        function formatAssistantMessage(text) {
+            console.log('Processing text:', text);
+            
+            const htmlRegex = /<HTML>(.*?)<\/HTML>/gs;
+            const matches = Array.from(text.matchAll(htmlRegex));
+            
+            console.log('Found matches:', matches.length);
+            
+            if (matches.length === 0) {
+                return text;
+            }
+            
+            let result = text;
+            
+            // Process matches in reverse order to maintain correct positions
+            for (let i = matches.length - 1; i >= 0; i--) {
+                const match = matches[i];
+                const fullMatch = match[0];  // e.g., "<HTML>link_card(...)</HTML>"
+                const htmlContent = match[1]; // e.g., "link_card(...)"
+                const startPos = match.index;
+                const endPos = startPos + fullMatch.length;
+                
+                console.log(`Processing match ${i + 1}:`, htmlContent);
+                
+                let replacement = '';
+                
+                if (htmlContent.startsWith('link_card(')) {
+                    const linkMatch = htmlContent.match(/link_card\("([^"]+)",\s*"([^"]+)",\s*"([^"]+)"\)/);
+                    if (linkMatch) {
+                        replacement = createLinkCard(linkMatch[1], linkMatch[2], linkMatch[3]);
+                    }
+                } else if (htmlContent.startsWith('youtube_embed(')) {
+                    const youtubeMatch = htmlContent.match(/youtube_embed\("([^"]+)"\)/);
+                    if (youtubeMatch) {
+                        replacement = createYouTubeEmbed(youtubeMatch[1]);
+                    }
+                }
+                
+                console.log('Replacement HTML:', replacement);
+                
+                // Use substring to replace the exact match
+                result = result.substring(0, startPos) + replacement + result.substring(endPos);
+            }
+            
+            console.log('Final result:', result);
+            return result;
+        }
+
+        // Test cases that reproduce the original issue
+        function runTests() {
+            // Test 1: Single HTML block (original issue scenario)
+            const test1Input = `Here's what I found about Ramsey Solutions:
+
+<HTML>link_card("Dave Ramsey's 7 Baby Steps", "Complete guide to financial freedom using Dave Ramsey's proven method", "https://www.ramseysolutions.com/dave-ramsey-7-baby-steps")</HTML>
+
+This is a comprehensive financial plan.`;
+
+            const test1Result = formatAssistantMessage(test1Input);
+            document.getElementById('test1-result').innerHTML = test1Result;
+
+            // Test 2: Multiple HTML blocks
+            const test2Input = `Here are multiple resources:
+
+<HTML>link_card("Emergency Fund Guide", "How to build your emergency fund", "https://www.ramseysolutions.com/saving/emergency-fund")</HTML>
+
+<HTML>youtube_embed("dQw4w9WgXcQ")</HTML>
+
+<HTML>link_card("Debt Snowball Method", "Step-by-step debt elimination", "https://www.ramseysolutions.com/debt/debt-snowball-method")</HTML>
+
+These resources will help you get started.`;
+
+            const test2Result = formatAssistantMessage(test2Input);
+            document.getElementById('test2-result').innerHTML = test2Result;
+
+            // Test 3: Mixed content
+            const test3Input = `Financial advice from Dave Ramsey:
+
+First, let's talk about budgeting.
+
+<HTML>link_card("EveryDollar Budget App", "Free budgeting tool by Ramsey Solutions", "https://www.everydollar.com")</HTML>
+
+Next, consider your debt strategy.
+
+<HTML>link_card("Debt Calculator", "Calculate your debt payoff timeline", "https://www.ramseysolutions.com/debt/debt-calculator")</HTML>
+
+Finally, start investing for the future.`;
+
+            const test3Result = formatAssistantMessage(test3Input);
+            document.getElementById('test3-result').innerHTML = test3Result;
+
+            // Test 4: No HTML blocks
+            const test4Input = `This is just plain text with no HTML blocks. The function should return this text unchanged without any processing.`;
+
+            const test4Result = formatAssistantMessage(test4Input);
+            document.getElementById('test4-result').innerHTML = test4Result;
+
+            // Validation checks
+            const allResults = [test1Result, test2Result, test3Result, test4Result];
+            let hasErrors = false;
+
+            allResults.forEach((result, index) => {
+                if (result.includes('<HTML>') || result.includes('</HTML>')) {
+                    console.error(`Test ${index + 1} failed: Still contains HTML tags`);
+                    hasErrors = true;
+                }
+                if (result.includes('link_card(') && !result.includes('class="link-preview"')) {
+                    console.error(`Test ${index + 1} failed: Contains unprocessed link_card function`);
+                    hasErrors = true;
+                }
+                if (result.includes('youtube_embed(') && !result.includes('<iframe')) {
+                    console.error(`Test ${index + 1} failed: Contains unprocessed youtube_embed function`);
+                    hasErrors = true;
+                }
+            });
+
+            if (!hasErrors) {
+                console.log('✅ All tests passed! HTML formatting fix is working correctly.');
+                document.body.insertAdjacentHTML('beforeend', 
+                    '<div class="test-section"><h2 class="success">✅ All Tests Passed!</h2><p>The HTML formatting fix is working correctly. No broken HTML fragments detected.</p></div>'
+                );
+            } else {
+                console.log('❌ Some tests failed. Check console for details.');
+                document.body.insertAdjacentHTML('beforeend', 
+                    '<div class="test-section"><h2 class="error">❌ Tests Failed</h2><p>Check the console for error details.</p></div>'
+                );
+            }
+        }
+
+        // Run tests when page loads
+        window.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>

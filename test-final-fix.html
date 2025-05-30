@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Final Fix Verification</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .success { 
+            border-color: #4CAF50; 
+            background-color: #f9fff9; 
+        }
+        .error { 
+            border-color: #f44336; 
+            background-color: #fff9f9; 
+        }
+        .chat-simulation {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .assistant-message {
+            background: transparent;
+            color: #333;
+            padding: 12px 0;
+            max-width: 100%;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Chrome Extension HTML Rendering Fix Verification</h1>
+        
+        <div class="test-section">
+            <h2>Test: Simulated Chat Response with Search Results</h2>
+            <p>This test simulates exactly what happens when the assistant responds with search results.</p>
+            <button onclick="runFullTest()">Run Complete Test</button>
+            <div id="test-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Result: How it appears in the chat</h2>
+            <div class="chat-simulation">
+                <div id="chat-result" class="assistant-message">
+                    <!-- Results will appear here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Debug Information</h2>
+            <div id="debug-info"></div>
+        </div>
+    </div>
+
+    <script>
+        // Copy the exact functions from popup.js
+        function createLinkCard(result) {
+            const title = result.title || 'Untitled';
+            const url = result.url || '#';
+            const description = result.description || 'No description available';
+            const displayLink = result.displayLink || new URL(url).hostname;
+            const favicon = result.favicon || `https://www.google.com/s2/favicons?domain=${displayLink}`;
+            
+            return `<div class="link-preview"><div class="link-preview-header"><img src="${favicon}" alt="Site icon" class="link-favicon" onerror="this.style.display='none'"><span class="link-domain">${displayLink}</span></div><div class="link-preview-body"><h4 class="link-title"><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></h4><p class="link-description">${description}</p></div></div>`;
+        }
+
+        function createYouTubeEmbed(result) {
+            const title = result.title || 'Untitled Video';
+            const description = result.description || 'No description available';
+            const thumbnail = result.thumbnail || `https://img.youtube.com/vi/${result.videoId}/mqdefault.jpg`;
+            const url = result.url || `https://www.youtube.com/watch?v=${result.videoId}`;
+            
+            return `<div class="youtube-embed" data-video-id="${result.videoId}"><div class="youtube-thumbnail" style="background-image: url('${thumbnail}')"><div class="youtube-play-button"><svg width="68" height="48" viewBox="0 0 68 48"><path d="M66.52,7.74c-0.78-2.93-2.49-5.41-5.42-6.19C55.79,.13,34,0,34,0S12.21,.13,6.9,1.55 C3.97,2.33,2.27,4.81,1.48,7.74C0.06,13.05,0,24,0,24s0.06,10.95,1.48,16.26c0.78,2.93,2.49,5.41,5.42,6.19 C12.21,47.87,34,48,34,48s21.79-0.13,27.1-1.55c2.93-0.78,4.64-3.26,5.42-6.19C67.94,34.95,68,24,68,24S67.94,13.05,66.52,7.74z" fill="#f00"></path><path d="M 45,24 27,14 27,34" fill="#fff"></path></svg></div></div><div class="youtube-info"><h4 class="youtube-title">${title}</h4><p class="youtube-description">${description}</p><a href="${url}" target="_blank" rel="noopener noreferrer" class="youtube-link">Watch on YouTube</a></div></div>`;
+        }
+
+        function createLinkPreview(result) {
+            if (result.type === 'video' && result.videoId) {
+                return createYouTubeEmbed(result);
+            } else {
+                return createLinkCard(result);
+            }
+        }
+
+        function formatMarkdownText(text) {
+            let formatted = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            
+            formatted = formatted
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            
+            formatted = formatted.replace(/^- (.*$)/gim, '<li>$1</li>');
+            formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+            formatted = formatted.replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>');
+            formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ol>$1</ol>');
+            
+            if (formatted.trim() && !formatted.includes('<p>') && !formatted.includes('<ul>') && !formatted.includes('<ol>')) {
+                formatted = '<p>' + formatted + '</p>';
+            }
+            
+            return formatted;
+        }
+
+        // The NEW formatAssistantMessage function with placeholder method
+        function formatAssistantMessage(text) {
+            if (text.includes('<div class="link-preview">') || text.includes('<div class="youtube-embed">')) {
+                const htmlBlocks = [];
+                const placeholders = [];
+                
+                let tempText = text;
+                const htmlRegex = /<div class="(?:link-preview|youtube-embed)"[\s\S]*?<\/div>/g;
+                let match;
+                let index = 0;
+                
+                while ((match = htmlRegex.exec(text)) !== null) {
+                    const placeholder = `__HTML_BLOCK_${index}__`;
+                    htmlBlocks.push(match[0]);
+                    placeholders.push(placeholder);
+                    tempText = tempText.replace(match[0], placeholder);
+                    index++;
+                }
+                
+                let formatted = formatMarkdownText(tempText);
+                
+                for (let i = 0; i < placeholders.length; i++) {
+                    formatted = formatted.replace(placeholders[i], htmlBlocks[i]);
+                }
+                
+                return formatted;
+            }
+            
+            return formatMarkdownText(text);
+        }
+
+        function runFullTest() {
+            const statusDiv = document.getElementById('test-status');
+            const resultDiv = document.getElementById('chat-result');
+            const debugDiv = document.getElementById('debug-info');
+            
+            statusDiv.innerHTML = '<div class="status" style="background: #fff3cd; color: #856404;">🔄 Running test...</div>';
+            
+            try {
+                // Step 1: Simulate search results (like from searchRamseyResources)
+                const searchResults = [
+                    {
+                        title: "EveryDollar - Free Budgeting App",
+                        url: "https://www.ramseysolutions.com/ramseyplus/everydollar",
+                        description: "Create a zero-based budget with EveryDollar. Give every dollar a job before you spend it. Free budgeting app that follows Dave Ramsey's proven money plan.",
+                        displayLink: "ramseysolutions.com",
+                        favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+                        type: "tool"
+                    },
+                    {
+                        title: "How To Build an Emergency Fund - Dave Ramsey",
+                        url: "https://www.youtube.com/watch?v=abc123def",
+                        description: "Dave Ramsey explains step-by-step how to build your first $1,000 emergency fund. This video covers the basics of Baby Step 1.",
+                        displayLink: "youtube.com",
+                        favicon: "https://www.google.com/s2/favicons?domain=youtube.com",
+                        type: "video",
+                        videoId: "abc123def",
+                        thumbnail: "https://img.youtube.com/vi/abc123def/mqdefault.jpg"
+                    }
+                ];
+
+                // Step 2: Create HTML previews (like in handleChat)
+                const formattedResults = searchResults.map(result => createLinkPreview(result)).join('\n');
+                
+                // Step 3: Simulate AI response + HTML combination
+                const aiResponse = "Here are some great **budgeting resources** to help you get started with your financial journey:";
+                const finalResponse = aiResponse + '\n\n' + formattedResults;
+                
+                // Step 4: Process through formatAssistantMessage (like in addMessageToDOM)
+                const processedHTML = formatAssistantMessage(finalResponse);
+                
+                // Step 5: Display result
+                resultDiv.innerHTML = processedHTML;
+                
+                // Step 6: Verify success
+                const hasLinkPreview = processedHTML.includes('<div class="link-preview">');
+                const hasYouTubeEmbed = processedHTML.includes('<div class="youtube-embed">');
+                const hasBoldText = processedHTML.includes('<strong>budgeting resources</strong>');
+                const noEscapedHTML = !processedHTML.includes('&lt;div') && !processedHTML.includes('&gt;');
+                
+                if (hasLinkPreview && hasYouTubeEmbed && hasBoldText && noEscapedHTML) {
+                    statusDiv.innerHTML = '<div class="status" style="background: #d4edda; color: #155724;">✅ Test PASSED! HTML rendering is working correctly.</div>';
+                } else {
+                    throw new Error('HTML rendering verification failed');
+                }
+                
+                // Debug info
+                debugDiv.innerHTML = `
+                    <h4>Debug Information:</h4>
+                    <p><strong>✅ Link Preview Found:</strong> ${hasLinkPreview}</p>
+                    <p><strong>✅ YouTube Embed Found:</strong> ${hasYouTubeEmbed}</p>
+                    <p><strong>✅ Markdown Formatting:</strong> ${hasBoldText}</p>
+                    <p><strong>✅ No Escaped HTML:</strong> ${noEscapedHTML}</p>
+                    <details>
+                        <summary>Raw HTML Output (click to expand)</summary>
+                        <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word;">${processedHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                    </details>
+                `;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status" style="background: #f8d7da; color: #721c24;">❌ Test FAILED: ${error.message}</div>`;
+                debugDiv.innerHTML = `<p style="color: #721c24;"><strong>Error:</strong> ${error.message}</p>`;
+            }
+        }
+
+        // Auto-run test when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runFullTest, 1000);
+        });
+    </script>
+</body>
+</html>

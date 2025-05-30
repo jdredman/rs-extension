@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Link Card</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="test-container"></div>
+    
+    <script>
+        // Test the createLinkCard function
+        function createLinkCard(result) {
+            return `
+        <div class="link-preview">
+            <div class="link-preview-header">
+                <img src="${result.favicon}" alt="Site icon" class="link-favicon" onerror="this.style.display='none'">
+                <span class="link-domain">${result.displayLink}</span>
+            </div>
+            <div class="link-preview-body">
+                <h4 class="link-title">
+                    <a href="${result.url}" target="_blank" rel="noopener noreferrer">${result.title}</a>
+                </h4>
+                <p class="link-description">${result.description}</p>
+            </div>
+        </div>
+    `;
+        }
+        
+        // Test data
+        const testResult = {
+            title: "EveryDollar - Free Budgeting App",
+            url: "https://www.ramseysolutions.com/ramseyplus/everydollar",
+            description: "Create a zero-based budget with EveryDollar. Give every dollar a job before you spend it. Free budgeting app that follows Dave Ramsey's proven money plan.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "tool"
+        };
+        
+        // Generate and display the HTML
+        const html = createLinkCard(testResult);
+        console.log('Generated HTML:', html);
+        document.getElementById('test-container').innerHTML = html;
+    </script>
+</body>
+</html>

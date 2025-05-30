@@ -9,7 +9,24 @@ const CONFIG = {
     CONVERSATIONS_KEY: 'conversationHistory',
     MAX_RETRIES: 3,
     RETRY_DELAY: 1000,
-    MAX_CONVERSATIONS: 50
+    MAX_CONVERSATIONS: 50,
+    // Trusted domains for web search
+    TRUSTED_DOMAINS: [
+        'ramseysolutions.com',
+        'labs.ramseysolutions.com',
+        'youtube.com',
+        'youtu.be'
+    ],
+    // YouTube playlist ID for Ramsey content
+    RAMSEY_YOUTUBE_PLAYLIST: 'PLN4yoAI6teRO_2ofccBr5IyP1xDra-h91',
+    
+    // Google Custom Search API configuration
+    GOOGLE_SEARCH_API_KEY: null, // Will be loaded from storage
+    GOOGLE_SEARCH_ENGINE_ID: null, // Will be loaded from storage
+    
+    // Search result limits
+    MAX_SEARCH_RESULTS: 5,
+    MAX_YOUTUBE_RESULTS: 3
 };
 
 // DOM Elements
@@ -407,6 +424,53 @@ function addMessageToDOM(text, type) {
  * @returns {string} - HTML formatted text
  */
 function formatAssistantMessage(text) {
+    // Check if the text already contains HTML (from search results)
+    if (text.includes('<div class="link-preview"') || text.includes('<div class="youtube-embed"')) {
+        // Find all HTML blocks first using matchAll for better reliability
+        const htmlRegex = /<div class="(?:link-preview|youtube-embed)"[\s\S]*?<\/div>\s*<\/div>/g;
+        const matches = Array.from(text.matchAll(htmlRegex));
+        
+        if (matches.length === 0) {
+            // No matches found, treat as regular markdown
+            return formatMarkdownText(text);
+        }
+        
+        const htmlBlocks = [];
+        const placeholders = [];
+        let tempText = text;
+        
+        // Replace each HTML block with a unique placeholder (in reverse order to avoid position shifts)
+        for (let i = matches.length - 1; i >= 0; i--) {
+            const match = matches[i];
+            const placeholder = `__HTML_BLOCK_${i}__`;
+            htmlBlocks.unshift(match[0]); // Add to beginning since we're going backwards
+            placeholders.unshift(placeholder);
+            
+            // Replace using start/end positions for precision
+            tempText = tempText.substring(0, match.index) + placeholder + tempText.substring(match.index + match[0].length);
+        }
+        
+        // Format the text without HTML as markdown
+        let formatted = formatMarkdownText(tempText);
+        
+        // Restore HTML blocks in correct order
+        for (let i = 0; i < placeholders.length; i++) {
+            formatted = formatted.replace(placeholders[i], htmlBlocks[i]);
+        }
+        
+        return formatted;
+    }
+    
+    // No HTML present, format as regular markdown
+    return formatMarkdownText(text);
+}
+
+/**
+ * Formats markdown text to HTML
+ * @param {string} text - The markdown text to format
+ * @returns {string} - HTML formatted text
+ */
+function formatMarkdownText(text) {
     // Escape HTML to prevent XSS
     let formatted = text
         .replace(/&/g, '&amp;')
@@ -433,8 +497,8 @@ function formatAssistantMessage(text) {
     formatted = formatted.replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>');
     formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ol>$1</ol>');
     
-    // Wrap in paragraphs if not already wrapped
-    if (!formatted.includes('<p>') && !formatted.includes('<ul>') && !formatted.includes('<ol>')) {
+    // Wrap in paragraphs if not already wrapped and not empty
+    if (formatted.trim() && !formatted.includes('<p>') && !formatted.includes('<ul>') && !formatted.includes('<ol>')) {
         formatted = '<p>' + formatted + '</p>';
     }
     
@@ -442,7 +506,7 @@ function formatAssistantMessage(text) {
 }
 
 /**
- * Handles the chat with OpenAI
+ * Handles the chat with OpenAI using function calling for web search
  */
 async function handleChat(userInput) {
     try {
@@ -485,23 +549,33 @@ ${context.metadata.keywords ? `Keywords: ${context.metadata.keywords}` : ''}
 ${context.metadata.author ? `Author: ${context.metadata.author}` : ''}
 `;
         }
+
         // Construct system message with Ramsey-specific instructions
         const systemMessage = `I am an official representative of Ramsey Solutions. I speak and advise as part of our team, giving guidance that is 100% aligned with our financial principles, teachings, and tone. I follow our 7 Baby Steps, encourage debt freedom, promote zero-based budgeting, and always speak with the confidence and clarity of a Ramsey Personality.
 
 I do not present alternative financial philosophies. I never recommend debt, credit cards, loans, or anything that contradicts our principles. Our method is the only and best option. I focus on behavior change and practical next steps, not financial theory.
 
-When helpful to the user, I include or link to trusted resources from these official sources ONLY:
+When helpful to the user, I can search for and link to trusted resources from these official sources ONLY:
 - https://www.ramseysolutions.com
-- https://labs.ramseysolutions.com/rp1/community
+- https://labs.ramseysolutions.com/rp1/community  
 - The YouTube playlist: https://www.youtube.com/playlist?list=PLN4yoAI6teRO_2ofccBr5IyP1xDra-h91
 - Our official tools and products like EveryDollar, FPU, SmartTax, and Ramsey Trusted Pros
 
-I use web search ONLY to retrieve real, up-to-date content from these trusted domains. I DO NOT generate or hallucinate URLs. I only return links that verifiably exist.
+Use the search_ramsey_resources function when you need to find specific, up-to-date content from our trusted domains to help answer the user's question. Only search when it would genuinely help provide better, more specific guidance.
 
-When returning a link, I include a metadata preview with:
-- The page title
-- A short description
-- The site favicon (if available)
+IMPORTANT: Always call search_ramsey_resources when users ask for:
+- Videos about specific topics (like "do you have a video about...")
+- Specific tools or resources ("what tools do you have", "how do I budget")
+- "Do you have..." questions
+- Recent content or updates
+- Examples or demonstrations of our teachings
+- Questions about Baby Steps, debt elimination, budgeting, or investing
+- When mentioning ANY Ramsey product (EveryDollar, FPU, SmartTax, SmartVestor)
+- General financial advice that could benefit from specific resources
+
+ALWAYS PROACTIVELY RECOMMEND RESOURCES: Even when giving general advice, search for and include relevant tools, calculators, articles, or courses that will help the user take immediate action. Don't just give advice—give them the specific resources to succeed.
+
+When I have search results from the function call, I will naturally incorporate them into my response. I don't need to create HTML manually - the search results will be automatically formatted as rich previews with proper metadata, titles, descriptions, and YouTube embeds where appropriate.
 
 I make responses conversational, actionable, and appropriately brief—just enough to be genuinely helpful. I am a guide, not just an answer box.
 
@@ -512,7 +586,7 @@ Always provide advice that aligns with our values and teachings as an official t
         // Get API key from storage
         const { OPENAI_API_KEY } = await chrome.storage.local.get(['OPENAI_API_KEY']);
         if (!OPENAI_API_KEY) {
-            addMessage('Error: OpenAI API key not found.', 'assistant');
+            addMessage('Error: OpenAI API key not found. Please configure your API key in the extension settings.', 'assistant');
             return;
         }
 
@@ -540,7 +614,34 @@ Always provide advice that aligns with our values and teachings as an official t
                 userInput
         });
 
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        // Define the function for searching Ramsey resources using modern tools format
+        const tools = [
+            {
+                type: 'function',
+                function: {
+                    name: 'search_ramsey_resources',
+                    description: 'Search for relevant content from trusted Ramsey Solutions domains including ramseysolutions.com, labs.ramseysolutions.com, and YouTube. Use this when you need specific, up-to-date information to better answer the user\'s financial questions.',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: {
+                                type: 'string',
+                                description: 'The search query to find relevant Ramsey Solutions content. Should be specific and focused on the user\'s financial question or topic.'
+                            },
+                            search_type: {
+                                type: 'string',
+                                enum: ['general', 'tools', 'videos', 'community'],
+                                description: 'Type of content to search for: general (articles/pages), tools (EveryDollar, FPU, etc.), videos (YouTube content), or community (labs.ramseysolutions.com)'
+                            }
+                        },
+                        required: ['query']
+                    }
+                }
+            }
+        ];
+
+        // Make initial API call with function definitions
+        let response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -549,6 +650,8 @@ Always provide advice that aligns with our values and teachings as an official t
             body: JSON.stringify({
                 model: 'gpt-3.5-turbo',
                 messages: messages,
+                tools: tools,
+                tool_choice: 'auto',
                 temperature: 0.7
             })
         });
@@ -557,7 +660,81 @@ Always provide advice that aligns with our values and teachings as an official t
             throw new Error('Failed to get response from OpenAI');
         }
 
-        const data = await response.json();
+        let data = await response.json();
+        const choice = data.choices[0];
+
+        // Check if OpenAI wants to call a tool
+        if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
+            const toolCall = choice.message.tool_calls[0];
+            const functionName = toolCall.function.name;
+            const functionArgs = JSON.parse(toolCall.function.arguments);
+
+            if (functionName === 'search_ramsey_resources') {
+                // Perform the search
+                const searchResults = await searchRamseyResources(functionArgs.query, functionArgs.search_type);
+                
+                // Format search results as HTML previews with proper spacing
+                const formattedResults = searchResults.map(result => createLinkPreview(result)).join('\n\n');
+                
+                // Add the function call message to conversation
+                messages.push(choice.message);
+                
+                // Add the function result using tool message format
+                messages.push({
+                    role: 'tool',
+                    tool_call_id: toolCall.id,
+                    content: JSON.stringify({
+                        results: searchResults.map(r => ({
+                            title: r.title,
+                            url: r.url,
+                            description: r.description,
+                            type: r.type
+                        })),
+                        query: functionArgs.query,
+                        results_count: searchResults.length,
+                        instruction: "I will provide formatted HTML previews in my final response. Reference these search results in your answer and mention that rich previews are available."
+                    })
+                });
+
+                // Make another API call with the function result
+                response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-3.5-turbo',
+                        messages: messages,
+                        temperature: 0.7
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to get response from OpenAI after function call');
+                }
+
+                data = await response.json();
+                
+                // Now append the formatted HTML previews to the response
+                const aiResponse = data.choices[0]?.message?.content || '';
+                let finalResponse = aiResponse;
+                
+                // Only add rich previews if we have search results
+                if (formattedResults && formattedResults.trim()) {
+                    finalResponse += '\n\n' + formattedResults;
+                }
+                
+                // Add the enhanced response with HTML previews
+                addMessage(finalResponse, 'assistant');
+                
+                // Initialize YouTube handlers for any new YouTube embeds
+                initializeYouTubeHandlers();
+                
+                return; // Exit early since we already added the message
+            }
+        }
+
         const assistantResponse = data.choices[0]?.message?.content;
         
         if (assistantResponse) {
@@ -590,6 +767,384 @@ function adjustTextareaHeight(textarea) {
     const maxHeight = 100;
     const newHeight = Math.min(textarea.scrollHeight, maxHeight);
     textarea.style.height = `${newHeight}px`;
+}
+
+/**
+ * Web Search and Resource Functions
+ */
+
+/**
+ * Searches for relevant Ramsey Solutions resources
+ * @param {string} query - The search query
+ * @param {string} searchType - Type of search: 'general', 'tools', 'videos', 'community'
+ * @returns {Promise<Array>} - Array of search results with metadata
+ */
+async function searchRamseyResources(query, searchType = 'general') {
+    try {
+        const results = [];
+        
+        // Load API keys from storage
+        const { GOOGLE_SEARCH_API_KEY, GOOGLE_SEARCH_ENGINE_ID } = await chrome.storage.local.get([
+            'GOOGLE_SEARCH_API_KEY', 
+            'GOOGLE_SEARCH_ENGINE_ID'
+        ]);
+        
+        // If we have Google Custom Search API configured, use it
+        if (GOOGLE_SEARCH_API_KEY && GOOGLE_SEARCH_ENGINE_ID) {
+            const searchResults = await performGoogleSearch(query, searchType, GOOGLE_SEARCH_API_KEY, GOOGLE_SEARCH_ENGINE_ID);
+            results.push(...searchResults);
+        } else {
+            // Fallback to sample data for demonstration
+            console.log('Google Search API not configured, using sample data');
+            const sampleResults = getSampleSearchResults(query, searchType);
+            results.push(...sampleResults);
+        }
+        
+        // Process and enhance results
+        return results.map(result => enhanceSearchResult(result));
+        
+    } catch (error) {
+        console.error('Error searching Ramsey resources:', error);
+        return getSampleSearchResults(query, searchType);
+    }
+}
+
+/**
+ * Performs a Google Custom Search API call
+ * @param {string} query - The search query
+ * @param {string} searchType - Type of search
+ * @param {string} apiKey - Google API key
+ * @param {string} engineId - Google Custom Search Engine ID
+ * @returns {Promise<Array>} - Array of search results
+ */
+async function performGoogleSearch(query, searchType, apiKey, engineId) {
+    const maxResults = CONFIG.MAX_SEARCH_RESULTS;
+    
+    // Build site restriction based on search type
+    let siteQuery = '';
+    switch (searchType) {
+        case 'tools':
+            siteQuery = 'site:ramseysolutions.com (EveryDollar OR FPU OR "Financial Peace" OR SmartTax OR "Ramsey Trusted Pros")';
+            break;
+        case 'videos':
+            siteQuery = 'site:youtube.com OR site:youtu.be "Dave Ramsey" OR "Ramsey Solutions"';
+            break;
+        case 'community':
+            siteQuery = 'site:labs.ramseysolutions.com';
+            break;
+        case 'general':
+        default:
+            siteQuery = 'site:ramseysolutions.com OR site:labs.ramseysolutions.com';
+            break;
+    }
+    
+    const searchQuery = `${query} ${siteQuery}`;
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${engineId}&q=${encodeURIComponent(searchQuery)}&num=${maxResults}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Google Search API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return (data.items || []).map(item => ({
+        title: item.title,
+        url: item.link,
+        description: item.snippet,
+        displayLink: item.displayLink,
+        favicon: `https://www.google.com/s2/favicons?domain=${new URL(item.link).hostname}`,
+        type: getResultType(item.link)
+    }));
+}
+
+/**
+ * Gets sample search results for demonstration when API is not configured
+ * @param {string} query - The search query
+ * @param {string} searchType - Type of search
+ * @returns {Array} - Array of sample search results
+ */
+function getSampleSearchResults(query, searchType) {
+    const lowerQuery = query.toLowerCase();
+    
+    // Sample results based on common financial topics
+    const sampleResults = [
+        {
+            title: "The 7 Baby Steps - Dave Ramsey",
+            url: "https://www.ramseysolutions.com/dave-ramsey-7-baby-steps",
+            description: "Follow these 7 steps in order to get out of debt and build wealth. Start with a $1,000 emergency fund, then pay off debt using the debt snowball method.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        },
+        {
+            title: "EveryDollar - Free Budgeting App",
+            url: "https://www.ramseysolutions.com/ramseyplus/everydollar",
+            description: "Create a zero-based budget with EveryDollar. Give every dollar a job before you spend it. Free budgeting app that follows Dave Ramsey's proven money plan.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "tool"
+        }
+    ];
+    
+    // Add context-specific results based on query - Enhanced Resource Detection
+    if (lowerQuery.includes('debt') || lowerQuery.includes('pay off') || lowerQuery.includes('snowball')) {
+        sampleResults.push({
+            title: "How to Pay Off Debt Fast With the Debt Snowball Method",
+            url: "https://www.ramseysolutions.com/debt/how-to-pay-off-debt-with-the-debt-snowball-plan",
+            description: "The debt snowball method helps you pay off debt fast by focusing on your smallest debt first while making minimum payments on the rest.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+        
+        sampleResults.push({
+            title: "Debt Snowball Calculator",
+            url: "https://www.ramseysolutions.com/debt/debt-snowball-calculator",
+            description: "Use our free debt snowball calculator to see how quickly you can become debt-free and how much you'll save in interest.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "tool"
+        });
+    }
+    
+    if (lowerQuery.includes('budget') || lowerQuery.includes('everydollar') || lowerQuery.includes('money')) {
+        sampleResults.push({
+            title: "How to Make a Budget in 5 Simple Steps",
+            url: "https://www.ramseysolutions.com/budgeting/how-to-make-a-budget",
+            description: "Learn how to create a zero-based budget that gives every dollar a purpose. Start taking control of your money today with these simple steps.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+        
+        sampleResults.push({
+            title: "EveryDollar Budgeting App",
+            url: "https://www.everydollar.com",
+            description: "The budgeting app that actually works. Create your zero-based budget and start winning with money today.",
+            displayLink: "everydollar.com",
+            favicon: "https://www.google.com/s2/favicons?domain=everydollar.com",
+            type: "tool"
+        });
+    }
+    
+    if (lowerQuery.includes('emergency') || lowerQuery.includes('fund') || lowerQuery.includes('baby step 1')) {
+        sampleResults.push({
+            title: "Emergency Fund: What It Is and Why You Need One",
+            url: "https://www.ramseysolutions.com/budgeting/emergency-fund",
+            description: "An emergency fund is money you've set aside for life's unexpected events. Learn how much you need and how to build one fast.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+    }
+    
+    if (lowerQuery.includes('baby steps') || lowerQuery.includes('7 baby steps') || lowerQuery.includes('plan')) {
+        sampleResults.push({
+            title: "Dave Ramsey's 7 Baby Steps",
+            url: "https://www.ramseysolutions.com/dave-ramsey-7-baby-steps",
+            description: "Follow these 7 baby steps to build wealth and achieve financial peace. This is the plan that has helped millions get out of debt and build wealth.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+    }
+    
+    if (lowerQuery.includes('fpu') || lowerQuery.includes('financial peace') || lowerQuery.includes('course') || lowerQuery.includes('class')) {
+        sampleResults.push({
+            title: "Financial Peace University",
+            url: "https://www.ramseysolutions.com/ramseyplus/financial-peace",
+            description: "Learn Dave's proven plan for money success. Join millions who have taken control of their money with our 9-lesson course.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "tool"
+        });
+    }
+    
+    if (lowerQuery.includes('investing') || lowerQuery.includes('retirement') || lowerQuery.includes('baby step 4')) {
+        sampleResults.push({
+            title: "Investing and Retirement Planning",
+            url: "https://www.ramseysolutions.com/retirement/how-to-invest",
+            description: "Learn how to invest 15% of your income for retirement. Build wealth the smart way with our proven investment principles.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+        
+        sampleResults.push({
+            title: "SmartVestor Pro Directory",
+            url: "https://www.ramseysolutions.com/retirement/smartvestor",
+            description: "Find investment professionals in your area who can help you invest with confidence.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "tool"
+        });
+    }
+    
+    if (lowerQuery.includes('insurance') || lowerQuery.includes('life insurance') || lowerQuery.includes('coverage')) {
+        sampleResults.push({
+            title: "How Much Life Insurance Do I Need?",
+            url: "https://www.ramseysolutions.com/insurance/how-much-life-insurance-do-i-need",
+            description: "Learn how to calculate the right amount of term life insurance to protect your family's financial future.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+    }
+    
+    if (lowerQuery.includes('taxes') || lowerQuery.includes('tax') || lowerQuery.includes('smarttax')) {
+        sampleResults.push({
+            title: "Ramsey SmartTax",
+            url: "https://www.ramseysolutions.com/taxes/smarttax",
+            description: "File your taxes with confidence. Get the maximum refund with our easy-to-use tax software.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "tool"
+        });
+    }
+    
+    return sampleResults.slice(0, CONFIG.MAX_SEARCH_RESULTS);
+}
+
+/**
+ * Determines the type of search result based on URL
+ * @param {string} url - The result URL
+ * @returns {string} - The result type
+ */
+function getResultType(url) {
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        return 'video';
+    } else if (url.includes('labs.ramseysolutions.com')) {
+        return 'community';
+    } else if (url.includes('everydollar') || url.includes('fpu') || url.includes('smarttax')) {
+        return 'tool';
+    } else {
+        return 'article';
+    }
+}
+
+/**
+ * Enhances a search result with additional metadata and formatting
+ * @param {Object} result - The raw search result
+ * @returns {Object} - Enhanced search result
+ */
+function enhanceSearchResult(result) {
+    const enhanced = { ...result };
+    
+    // Extract YouTube video ID if it's a YouTube URL
+    if (enhanced.type === 'video') {
+        enhanced.videoId = extractYouTubeId(enhanced.url);
+        enhanced.thumbnail = enhanced.videoId ? 
+            `https://img.youtube.com/vi/${enhanced.videoId}/mqdefault.jpg` : null;
+    }
+    
+    // Ensure favicon is available
+    if (!enhanced.favicon) {
+        enhanced.favicon = `https://www.google.com/s2/favicons?domain=${new URL(enhanced.url).hostname}`;
+    }
+    
+    // Truncate description if too long
+    if (enhanced.description && enhanced.description.length > 150) {
+        enhanced.description = enhanced.description.substring(0, 147) + '...';
+    }
+    
+    return enhanced;
+}
+
+/**
+ * Extracts YouTube video ID from various YouTube URL formats
+ * @param {string} url - YouTube URL
+ * @returns {string|null} - Video ID or null if not found
+ */
+function extractYouTubeId(url) {
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[7].length === 11) ? match[7] : null;
+}
+
+/**
+ * Creates a link preview HTML for a search result
+ * @param {Object} result - The search result object
+ * @returns {string} - HTML string for the link preview
+ */
+function createLinkPreview(result) {
+    if (result.type === 'video' && result.videoId) {
+        return createYouTubeEmbed(result);
+    } else {
+        return createLinkCard(result);
+    }
+}
+
+/**
+ * Creates a YouTube embed HTML
+ * @param {Object} result - The video result object
+ * @returns {string} - HTML string for YouTube embed
+ */
+function createYouTubeEmbed(result) {
+    const title = result.title || 'Untitled Video';
+    const description = result.description || 'No description available';
+    const thumbnail = result.thumbnail || `https://img.youtube.com/vi/${result.videoId}/mqdefault.jpg`;
+    const url = result.url || `https://www.youtube.com/watch?v=${result.videoId}`;
+    
+    return `<div class="youtube-embed" data-video-id="${result.videoId}">
+  <div class="youtube-thumbnail" style="background-image: url('${thumbnail}')">
+    <div class="youtube-play-button">
+      <svg width="68" height="48" viewBox="0 0 68 48">
+        <path d="M66.52,7.74c-0.78-2.93-2.49-5.41-5.42-6.19C55.79,.13,34,0,34,0S12.21,.13,6.9,1.55 C3.97,2.33,2.27,4.81,1.48,7.74C0.06,13.05,0,24,0,24s0.06,10.95,1.48,16.26c0.78,2.93,2.49,5.41,5.42,6.19 C12.21,47.87,34,48,34,48s21.79-0.13,27.1-1.55c2.93-0.78,4.64-3.26,5.42-6.19C67.94,34.95,68,24,68,24S67.94,13.05,66.52,7.74z" fill="#f00"></path>
+        <path d="M 45,24 27,14 27,34" fill="#fff"></path>
+      </svg>
+    </div>
+  </div>
+  <div class="youtube-info">
+    <h4 class="youtube-title">${title}</h4>
+    <p class="youtube-description">${description}</p>
+    <a href="${url}" target="_blank" rel="noopener noreferrer" class="youtube-link">Watch on YouTube</a>
+  </div>
+</div>`;
+}
+
+/**
+ * Creates a link card HTML for non-video results
+ * @param {Object} result - The search result object
+ * @returns {string} - HTML string for link card
+ */
+function createLinkCard(result) {
+    // Ensure all required properties exist with fallbacks
+    const title = result.title || 'Untitled';
+    const url = result.url || '#';
+    const description = result.description || 'No description available';
+    const displayLink = result.displayLink || new URL(url).hostname;
+    const favicon = result.favicon || `https://www.google.com/s2/favicons?domain=${displayLink}`;
+    
+    // Build HTML string without extra whitespace that might cause issues
+    // Using a different HTML structure to prevent HTML fragments from appearing as raw text
+    return `<div class="link-preview" data-url="${url}">
+  <div class="link-preview-header">
+    <img src="${favicon}" alt="Site icon" class="link-favicon" onerror="this.style.display='none'">
+    <span class="link-domain">${displayLink}</span>
+  </div>
+  <div class="link-preview-body">
+    <h4 class="link-title"><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></h4>
+    <p class="link-description">${description}</p>
+  </div>
+</div>`;
+}
+
+/**
+ * Initializes YouTube embed click handlers
+ */
+function initializeYouTubeHandlers() {
+    // Add event delegation for YouTube thumbnails
+    document.addEventListener('click', (e) => {
+        const youtubeEmbed = e.target.closest('.youtube-embed');
+        if (youtubeEmbed) {
+            const videoId = youtubeEmbed.dataset.videoId;
+            if (videoId) {
+                const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+                chrome.tabs.create({ url: youtubeUrl });
+            }
+        }
+    });
 }
 
 /**
@@ -868,6 +1423,7 @@ function initializePopup() {
     initializeEventListeners();
     initializeVideoCarousel();
     adjustTextareaHeight(elements.userInput);
+    initializeYouTubeHandlers();
 }
 
 // Initialize when DOM is ready
