@@ -18,11 +18,49 @@ const CONFIG = {
             '.main-content',
             '.article-content',
             'meta[name="description"]'
+        ],
+        // Enhanced selectors for contextual purchase analysis
+        purchase: [
+            '.price',
+            '.cost',
+            '.amount',
+            '[class*="price"]',
+            '[class*="cost"]',
+            '[class*="amount"]',
+            '[data-price]',
+            '[data-cost]',
+            'span:contains("$")',
+            'div:contains("$")',
+            '.product-title',
+            '.item-name',
+            '[class*="product"]',
+            '[class*="item"]'
+        ],
+        financial: [
+            '.payment',
+            '.monthly',
+            '.installment',
+            '.financing',
+            '.loan',
+            '.interest',
+            '.apr',
+            '[class*="payment"]',
+            '[class*="finance"]',
+            '[class*="loan"]'
         ]
     },
     WARNING_TRIGGERS: {
         budget: ['cart', 'shopping cart', 'checkout', 'add to cart', 'buy now', 'purchase', 'order total', 'subtotal', 'product page', 'item details', 'buy', 'order now', 'add to bag'],
         creditCard: ['credit card']
+    },
+    // Context detection patterns for different page types
+    CONTEXT_PATTERNS: {
+        shopping: ['buy', 'purchase', 'cart', 'checkout', 'order', 'product', 'item', 'store', 'shop'],
+        financial: ['loan', 'mortgage', 'finance', 'payment', 'debt', 'credit', 'insurance', 'investment'],
+        real_estate: ['house', 'home', 'property', 'real estate', 'mortgage', 'rent', 'apartment'],
+        automotive: ['car', 'vehicle', 'auto', 'truck', 'motorcycle', 'lease', 'financing'],
+        subscription: ['monthly', 'subscription', 'plan', 'membership', 'recurring'],
+        education: ['college', 'university', 'tuition', 'student loan', 'education', 'course']
     }
 };
 
@@ -35,7 +73,9 @@ function extractAndStoreContext() {
         title: document.title,
         timestamp: Date.now(),
         content: {},
-        metadata: {}
+        metadata: {},
+        purchaseContext: {},
+        pageType: 'general'
     };
 
     // Get main content with structure
@@ -58,11 +98,19 @@ function extractAndStoreContext() {
         });
     });
 
+    // Extract purchase-related context
+    context.purchaseContext = extractPurchaseContext();
+    
+    // Determine page type based on content and URL
+    context.pageType = determinePageType(context);
+
     // Get additional metadata
     context.metadata = {
         description: document.querySelector('meta[name="description"]')?.content,
         keywords: document.querySelector('meta[name="keywords"]')?.content,
-        author: document.querySelector('meta[name="author"]')?.content
+        author: document.querySelector('meta[name="author"]')?.content,
+        ogTitle: document.querySelector('meta[property="og:title"]')?.content,
+        ogDescription: document.querySelector('meta[property="og:description"]')?.content
     };
 
     // Create structured content
@@ -247,6 +295,115 @@ function dismissWarning(type, element) {
     if (warningsContainer && warningsContainer.children.length === 0) {
         warningsContainer.remove();
     }
+}
+
+// Extracts purchase-related context from the page
+function extractPurchaseContext() {
+    const purchaseContext = {
+        prices: [],
+        productInfo: [],
+        financialTerms: [],
+        hasFinancing: false,
+        hasSubscription: false
+    };
+
+    // Extract price information
+    const pricePatterns = [
+        /\$[\d,]+\.?\d*/g,
+        /USD\s*[\d,]+\.?\d*/g,
+        /[\d,]+\.?\d*\s*dollars?/gi
+    ];
+
+    const pageText = document.body.textContent;
+    pricePatterns.forEach(pattern => {
+        const matches = pageText.match(pattern);
+        if (matches) {
+            purchaseContext.prices.push(...matches.slice(0, 10)); // Limit to 10 prices
+        }
+    });
+
+    // Look for product/service information
+    const productSelectors = [
+        'h1', 'h2', '.product-title', '.item-name', '.product-name',
+        '[class*="product"]', '[class*="item"]', '.title'
+    ];
+
+    productSelectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(el => {
+            const text = el.textContent.trim();
+            if (text && text.length < 200) { // Reasonable product title length
+                purchaseContext.productInfo.push(text);
+            }
+        });
+    });
+
+    // Check for financing/payment terms
+    const financingKeywords = [
+        'financing', 'monthly payment', 'installment', 'apr', 'interest rate',
+        'down payment', 'lease', 'loan', 'credit', 'payment plan'
+    ];
+
+    const lowerText = pageText.toLowerCase();
+    financingKeywords.forEach(keyword => {
+        if (lowerText.includes(keyword)) {
+            purchaseContext.hasFinancing = true;
+            purchaseContext.financialTerms.push(keyword);
+        }
+    });
+
+    // Check for subscription indicators
+    const subscriptionKeywords = [
+        'monthly', 'yearly', 'subscription', 'recurring', 'auto-renew',
+        'cancel anytime', 'per month', 'per year'
+    ];
+
+    subscriptionKeywords.forEach(keyword => {
+        if (lowerText.includes(keyword)) {
+            purchaseContext.hasSubscription = true;
+        }
+    });
+
+    // Limit arrays to prevent oversized context
+    purchaseContext.productInfo = purchaseContext.productInfo.slice(0, 5);
+    purchaseContext.financialTerms = purchaseContext.financialTerms.slice(0, 5);
+
+    return purchaseContext;
+}
+
+/**
+ * Determines the type of page based on content and URL
+ */
+function determinePageType(context) {
+    const url = context.url.toLowerCase();
+    const title = context.title.toLowerCase();
+    const content = context.content.summary?.toLowerCase() || '';
+    
+    // Check URL patterns first
+    if (url.includes('/cart') || url.includes('/checkout') || url.includes('/order')) {
+        return 'shopping_cart';
+    }
+    
+    if (url.includes('/product') || url.includes('/item') || url.includes('/p/')) {
+        return 'product_page';
+    }
+
+    // Check content patterns
+    for (const [type, keywords] of Object.entries(CONFIG.CONTEXT_PATTERNS)) {
+        const matchCount = keywords.filter(keyword => 
+            url.includes(keyword) || 
+            title.includes(keyword) || 
+            content.includes(keyword)
+        ).length;
+        
+        // If multiple keywords match, it's likely this type of page
+        if (matchCount >= 2) {
+            return type;
+        }
+    }
+
+    // Default fallback
+    return 'general';
 }
 
 // Handle messages from popup and background script

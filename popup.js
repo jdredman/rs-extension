@@ -517,7 +517,7 @@ async function handleChat(userInput) {
         // Add user message to chat first
         addMessage(userInput, 'user');
         
-        // Check if user's question seems to relate to current page content
+        // Check if user's question seems to relate to current page content or is ambiguous
         const isPageRelevant = context && (
             userInput.toLowerCase().includes('this page') ||
             userInput.toLowerCase().includes('this article') ||
@@ -525,6 +525,34 @@ async function handleChat(userInput) {
             userInput.toLowerCase().includes('what i\'m reading') ||
             userInput.toLowerCase().includes('here') ||
             userInput.toLowerCase().includes('this content') ||
+            userInput.toLowerCase().includes('this item') ||
+            userInput.toLowerCase().includes('this product') ||
+            userInput.toLowerCase().includes('this service') ||
+            userInput.toLowerCase().includes('this deal') ||
+            userInput.toLowerCase().includes('this offer') ||
+            // Ambiguous questions that need context
+            userInput.toLowerCase().includes('should i buy') ||
+            userInput.toLowerCase().includes('is this worth') ||
+            userInput.toLowerCase().includes('can i afford') ||
+            userInput.toLowerCase().includes('good deal') ||
+            userInput.toLowerCase().includes('worth it') ||
+            userInput.toLowerCase().includes('recommend this') ||
+            userInput.toLowerCase().includes('what do you think') ||
+            userInput.toLowerCase().includes('is this good') ||
+            userInput.toLowerCase().includes('should i get') ||
+            userInput.toLowerCase().includes('is this smart') ||
+            // Context-dependent financial questions
+            (context.pageType !== 'general' && (
+                userInput.toLowerCase().includes('budget') ||
+                userInput.toLowerCase().includes('afford') ||
+                userInput.toLowerCase().includes('payment') ||
+                userInput.toLowerCase().includes('cost') ||
+                userInput.toLowerCase().includes('price') ||
+                userInput.toLowerCase().includes('expensive') ||
+                userInput.toLowerCase().includes('cheap') ||
+                userInput.toLowerCase().includes('finance') ||
+                userInput.toLowerCase().includes('loan')
+            )) ||
             (context.content.summary && 
                 context.content.summary.toLowerCase().split(' ').some(word => 
                     userInput.toLowerCase().includes(word) && word.length > 4
@@ -602,6 +630,23 @@ PROACTIVE OPPORTUNITY IDENTIFICATION: I actively look for opportunities to help 
 - Any mention of debt, payments, or money struggles → Immediately provide debt elimination resources
 
 I don't wait to be asked - I proactively identify how our resources can help users succeed financially and offer specific next steps.
+
+CONTEXTUAL PURCHASE GUIDANCE: When page context is provided and users ask ambiguous questions like "should I buy this", "is this worth it", "can I afford this", or "what do you think", I use the page context to provide specific Ramsey-aligned guidance:
+
+Page Context Usage:
+- Shopping/Product Pages: Guide users through Ramsey purchasing principles - pay cash, budget for it first, avoid financing
+- High-Price Items: Discuss the opportunity cost, emergency fund protection, and debt-free principles
+- Financing/Subscription Services: Strongly discourage debt-based purchases and monthly payment mentality
+- Multiple Price Points: Help users evaluate based on their Baby Step and budget priorities
+
+When page context shows:
+- Product prices → Discuss budgeting and cash payment principles
+- Financing terms → Redirect to debt-free alternatives and saving strategies
+- Subscription services → Address the monthly payment trap and budget impact
+- Luxury/wants → Help distinguish needs vs wants using Ramsey principles
+- Investment products → Guide through proper investment order (Baby Steps 4-6)
+
+I always use page context to make my advice specific and actionable, referencing what they're actually looking at while providing Ramsey-aligned guidance.
 
 When I have search results from the function call, I will naturally incorporate them into my response. I don't need to create HTML manually - the search results will be automatically formatted as rich previews with proper metadata, titles, descriptions, and YouTube embeds where appropriate.
 
