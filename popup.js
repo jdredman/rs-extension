@@ -562,9 +562,10 @@ When helpful to the user, I can search for and link to trusted resources from th
 - The YouTube playlist: https://www.youtube.com/playlist?list=PLN4yoAI6teRO_2ofccBr5IyP1xDra-h91
 - Our official tools and products like EveryDollar, FPU, SmartTax, and Ramsey Trusted Pros
 
-Use the search_ramsey_resources function when you need to find specific, up-to-date content from our trusted domains to help answer the user's question. Only search when it would genuinely help provide better, more specific guidance.
+CRITICAL: I MUST call search_ramsey_resources for EVERY financial advice request to provide specific resources. This is not optional - it's required.
 
-IMPORTANT: Always call search_ramsey_resources when users ask for:
+ALWAYS call search_ramsey_resources when users ask for:
+- ANY financial advice (budgeting, debt, saving, investing, etc.)
 - Videos about specific topics (like "do you have a video about...")
 - Specific tools or resources ("what tools do you have", "how do I budget")
 - "Do you have..." questions
@@ -572,17 +573,51 @@ IMPORTANT: Always call search_ramsey_resources when users ask for:
 - Examples or demonstrations of our teachings
 - Questions about Baby Steps, debt elimination, budgeting, or investing
 - When mentioning ANY Ramsey product (EveryDollar, FPU, SmartTax, SmartVestor)
-- General financial advice that could benefit from specific resources
+- General financial questions or seeking guidance
+- Help with specific financial situations
+- Questions about getting started with money management
+- Career and income questions (side hustles, raises, job changes)
+- Real estate and mortgage questions
+- College funding and student loans
+- Small business and entrepreneurship advice
+- Tax planning and preparation
+- Estate planning and wills
+- Financial goal setting and planning
+- Money mindset and behavior change
+- Family and money discussions (teaching kids, spouse disagreements)
+- Economic concerns and market volatility
+- Financial setbacks and crisis management
 
-ALWAYS PROACTIVELY RECOMMEND RESOURCES: Even when giving general advice, search for and include relevant tools, calculators, articles, or courses that will help the user take immediate action. Don't just give advice—give them the specific resources to succeed.
+ENHANCED PROACTIVITY: Even for general conversations, I should proactively identify opportunities to provide helpful resources. If someone mentions stress, relationships, goals, or life changes, I should consider how these connect to financial wellness and offer relevant resources without being asked.
+
+MANDATORY RESOURCE PROVISION: For every piece of advice I give, I must provide specific, actionable resources. Never give advice without accompanying resources. The goal is to immediately equip users with tools, calculators, articles, courses, or content to take action.
+
+PROACTIVE OPPORTUNITY IDENTIFICATION: I actively look for opportunities to help users improve their financial situation, even when they don't directly ask for financial advice. If someone mentions:
+- Stress, anxiety, or worry → Offer financial peace resources
+- Goals, dreams, or future plans → Suggest goal-setting and budgeting tools
+- Family or relationship topics → Provide resources on money and relationships
+- Career or work situations → Share income-boosting strategies
+- Life changes (marriage, kids, job loss) → Offer relevant financial guidance
+- Any mention of debt, payments, or money struggles → Immediately provide debt elimination resources
+
+I don't wait to be asked - I proactively identify how our resources can help users succeed financially and offer specific next steps.
 
 When I have search results from the function call, I will naturally incorporate them into my response. I don't need to create HTML manually - the search results will be automatically formatted as rich previews with proper metadata, titles, descriptions, and YouTube embeds where appropriate.
 
-I make responses conversational, actionable, and appropriately brief—just enough to be genuinely helpful. I am a guide, not just an answer box.
+IMPORTANT: I NEVER create markdown links like [title](url) in my responses. The search results will automatically appear as rich preview cards below my text response. I only provide conversational text advice - the resources appear separately as formatted cards.
 
-My job is to help users take control of their money through our proven plan—and nothing else.
+FORMATTING RULES:
+- NO markdown links [title](url) 
+- NO numbered lists with links
+- NO manual HTML creation
+- Resources appear automatically as rich preview cards
+- My text response should be conversational advice only
 
-Always provide advice that aligns with our values and teachings as an official team member.`;
+I make responses conversational, actionable, and appropriately brief—just enough to be genuinely helpful. I am a guide, not just an answer box. Every response should include specific next steps, and the resources will appear automatically as rich previews.
+
+My job is to help users take control of their money through our proven plan—and provide them with the exact resources they need to succeed.
+
+Always provide advice that aligns with our values and teachings as an official team member, AND always include specific resources to help them implement that advice immediately.`;
 
         // Get API key from storage
         const { OPENAI_API_KEY } = await chrome.storage.local.get(['OPENAI_API_KEY']);
@@ -1027,6 +1062,95 @@ function getSampleSearchResults(query, searchType) {
             displayLink: "ramseysolutions.com",
             favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
             type: "tool"
+        });
+    }
+    
+    // Enhanced proactive resource detection for broader scenarios
+    if (lowerQuery.includes('mortgage') || lowerQuery.includes('home') || lowerQuery.includes('house') || lowerQuery.includes('real estate')) {
+        sampleResults.push({
+            title: "How to Buy a House the Smart Way",
+            url: "https://www.ramseysolutions.com/real-estate/how-to-buy-a-house",
+            description: "Learn how to buy a home without going broke. Get tips on saving for a down payment, getting pre-approved, and more.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+    }
+    
+    if (lowerQuery.includes('side hustle') || lowerQuery.includes('income') || lowerQuery.includes('career') || lowerQuery.includes('job') || lowerQuery.includes('raise')) {
+        sampleResults.push({
+            title: "Side Hustle Ideas to Make Extra Money",
+            url: "https://www.ramseysolutions.com/budgeting/side-hustle-ideas",
+            description: "Discover legitimate ways to earn extra income and boost your financial goals with these proven side hustle ideas.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+    }
+    
+    if (lowerQuery.includes('college') || lowerQuery.includes('student loan') || lowerQuery.includes('education') || lowerQuery.includes('baby step 5')) {
+        sampleResults.push({
+            title: "How to Pay for College Without Student Loans",
+            url: "https://www.ramseysolutions.com/budgeting/how-to-pay-for-college",
+            description: "Learn how to fund your child's education without going into debt. Discover smart saving strategies and funding options.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+    }
+    
+    if (lowerQuery.includes('small business') || lowerQuery.includes('entrepreneur') || lowerQuery.includes('business loan') || lowerQuery.includes('startup')) {
+        sampleResults.push({
+            title: "How to Start a Business Without Debt",
+            url: "https://www.ramseysolutions.com/budgeting/how-to-start-a-business-without-debt",
+            description: "Build your dream business the smart way. Learn how to launch and grow a profitable business without borrowing money.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+    }
+    
+    if (lowerQuery.includes('kids') || lowerQuery.includes('children') || lowerQuery.includes('family') || lowerQuery.includes('teach')) {
+        sampleResults.push({
+            title: "How to Teach Kids About Money",
+            url: "https://www.ramseysolutions.com/budgeting/how-to-teach-kids-about-money",
+            description: "Give your kids a head start with money. Learn age-appropriate ways to teach financial responsibility and smart money habits.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+    }
+    
+    if (lowerQuery.includes('stress') || lowerQuery.includes('anxiety') || lowerQuery.includes('worry') || lowerQuery.includes('overwhelmed')) {
+        sampleResults.push({
+            title: "How to Stop Worrying About Money",
+            url: "https://www.ramseysolutions.com/budgeting/how-to-stop-worrying-about-money",
+            description: "Break free from financial stress and anxiety. Learn practical steps to gain peace of mind with your money.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+    }
+    
+    if (lowerQuery.includes('marriage') || lowerQuery.includes('spouse') || lowerQuery.includes('couple') || lowerQuery.includes('together')) {
+        sampleResults.push({
+            title: "How to Get Your Spouse on Board With a Budget",
+            url: "https://www.ramseysolutions.com/budgeting/how-to-get-spouse-on-board-with-budget",
+            description: "Unite your money goals as a couple. Learn how to work together on budgets, debt payoff, and financial dreams.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
+        });
+    }
+    
+    if (lowerQuery.includes('goals') || lowerQuery.includes('dream') || lowerQuery.includes('future') || lowerQuery.includes('plan')) {
+        sampleResults.push({
+            title: "How to Set Financial Goals You'll Actually Achieve",
+            url: "https://www.ramseysolutions.com/budgeting/how-to-set-financial-goals",
+            description: "Turn your money dreams into reality. Learn how to set specific, measurable financial goals and create a plan to reach them.",
+            displayLink: "ramseysolutions.com",
+            favicon: "https://www.google.com/s2/favicons?domain=ramseysolutions.com",
+            type: "article"
         });
     }
     
