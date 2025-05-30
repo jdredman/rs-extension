@@ -10,6 +10,7 @@ const CONFIG = {
     MAX_RETRIES: 3,
     RETRY_DELAY: 1000,
     MAX_CONVERSATIONS: 50,
+    MAX_HISTORY_MESSAGES: 10, // Limit conversation history to prevent context overflow
     // Trusted domains for web search
     TRUSTED_DOMAINS: [
         'ramseysolutions.com',
@@ -513,7 +514,7 @@ async function handleChat(userInput) {
         // Get fresh context
         const context = await getCurrentTabContext();
         
-        // Add user message to chat
+        // Add user message to chat first
         addMessage(userInput, 'user');
         
         // Check if user's question seems to relate to current page content
@@ -590,7 +591,7 @@ Always provide advice that aligns with our values and teachings as an official t
             return;
         }
 
-        // Build messages array
+        // Build messages array starting with system message
         const messages = [
             {
                 role: 'system',
@@ -606,7 +607,33 @@ Always provide advice that aligns with our values and teachings as an official t
             });
         }
 
-        // Add user message
+        // Add conversation history to maintain context (excluding the current user message)
+        // Convert stored messages to OpenAI format, excluding tool messages
+        // Limit history to prevent context overflow
+        const historyMessages = currentConversation.messages.slice(0, -1); // Exclude the last message (current user input)
+        const recentHistory = historyMessages.slice(-CONFIG.MAX_HISTORY_MESSAGES); // Get most recent messages
+        
+        recentHistory.forEach(msg => {
+            // Skip any messages that might be malformed
+            if (msg.text && msg.type && typeof msg.text === 'string') {
+                if (msg.type === 'user') {
+                    messages.push({
+                        role: 'user',
+                        content: msg.text
+                    });
+                } else if (msg.type === 'assistant') {
+                    // For assistant messages, we need to clean them of HTML to avoid confusion
+                    // but preserve the conversational content
+                    const cleanContent = msg.text.replace(/<div class="(?:link-preview|youtube-embed)"[\s\S]*?<\/div>\s*<\/div>/g, '[Resource links provided]');
+                    messages.push({
+                        role: 'assistant',
+                        content: cleanContent
+                    });
+                }
+            }
+        });
+
+        // Add current user message
         messages.push({
             role: 'user',
             content: contextDescription ? 
